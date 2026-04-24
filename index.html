@@ -2,22 +2,22 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#faece8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="衡點 打卡">
-<title>衡點健康  打卡 QR</title>
+<title>衡點健康  打卡</title>
+
+<!-- LIFF SDK -->
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- QR Code -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
 <style>
+  /* ============================================
+     CIS TOKENS  衡點健康 Brand Palette
+  ============================================ */
   :root {
     --bg:         #faece8;
     --surface:    #ffffff;
@@ -30,7 +30,7 @@
     --terracotta: #b16056;
     --hover-soft: #faece8;
     --radius: 4px;
-    --radius-lg: 12px;
+    --radius-lg: 8px;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -40,415 +40,633 @@
     background: var(--bg);
     color: var(--text);
     font-family: "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior: none;
-    overflow: hidden;
-    height: 100%;
+    overscroll-behavior-y: none;
   }
 
-  body {
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    padding: 28px 40px;
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 22px 16px 50px;
   }
 
-  /* ========== TOPBAR ========== */
+  /* ============ TOPBAR ============ */
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
+    font-size: 10px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-mute);
+    padding: 4px 6px 14px;
   }
-  .topbar .brand { display: flex; align-items: center; }
   .topbar .dot {
     display: inline-block;
-    width: 7px; height: 7px;
+    width: 6px; height: 6px;
     background: var(--mint);
     border-radius: 50%;
-    margin-right: 10px;
-  }
-  .topbar .status.live .dot {
-    animation: pulse 1.8s ease-in-out infinite;
-  }
-  .topbar .status.err .dot {
-    background: var(--terracotta);
-    animation: none;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.85); }
+    margin-right: 8px;
+    transform: translateY(-1px);
   }
 
-  /* ========== HERO ========== */
-  .hero-row {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-top: 18px;
-    margin-bottom: 18px;
-    gap: 24px;
+  /* ============ HERO ============ */
+  header.hero {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 34px 26px 30px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
   }
-  .hero-left .eyebrow {
+  header.hero::after {
+    content: "";
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 140px; height: 140px;
+    background: var(--mint);
+    opacity: 0.08;
+    border-radius: 50%;
+  }
+  header.hero .eyebrow {
     font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--terracotta);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
-  .hero-left h1 {
+  header.hero h1 {
     font-family: "Fraunces", serif;
     font-weight: 500;
-    font-size: clamp(42px, 5.4vw, 68px);
-    line-height: 1;
+    font-size: clamp(36px, 9vw, 48px);
+    line-height: 1.02;
     letter-spacing: -0.02em;
-    margin: 0;
+    margin: 0 0 12px;
     color: var(--text);
   }
-  .hero-left h1 em {
+  header.hero h1 em {
     font-style: italic;
     font-weight: 400;
     color: var(--mint);
   }
-
-  .hero-right {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  .clock {
-    font-family: "Fraunces", serif;
-    font-weight: 500;
-    font-size: clamp(48px, 7vw, 96px);
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-  .date {
-    font-family: "JetBrains Mono", monospace;
-    font-size: clamp(11px, 1.2vw, 14px);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-mute);
-    margin-top: 6px;
-  }
-
-  /* ========== MAIN QR ========== */
-  main {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 32px;
-    min-height: 0;
-  }
-
-  .qr-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 34px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .qr-card::before {
-    content: "";
-    position: absolute;
-    right: -60px; top: -60px;
-    width: 200px; height: 200px;
-    background: var(--mint);
-    opacity: 0.07;
-    border-radius: 50%;
-  }
-  .qr-card::after {
-    content: "";
-    position: absolute;
-    left: -40px; bottom: -40px;
-    width: 140px; height: 140px;
-    background: var(--terracotta);
-    opacity: 0.04;
-    border-radius: 50%;
-  }
-  .qr-inner {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-  }
-  .qr-label {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--terracotta);
-    margin-bottom: 14px;
-  }
-  .qr-title {
-    font-family: "Fraunces", serif;
-    font-weight: 500;
-    font-size: clamp(22px, 2.2vw, 30px);
-    letter-spacing: -0.01em;
-    margin-bottom: 22px;
-    color: var(--text);
-  }
-  #qr-box {
-    width: clamp(260px, 36vh, 440px);
-    height: clamp(260px, 36vh, 440px);
-    padding: 18px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #qr-box > canvas,
-  #qr-box > img {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-  }
-  .qr-hint {
-    margin-top: 22px;
+  header.hero .sub {
     font-size: 13.5px;
-    color: var(--text);
-    letter-spacing: 0.02em;
-    max-width: 32ch;
-    text-align: center;
     line-height: 1.7;
-  }
-  .qr-hint .num {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    color: var(--terracotta);
-    letter-spacing: 0.2em;
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  /* ========== RIGHT PANEL ========== */
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    min-height: 0;
-  }
-  .panel {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 22px 24px;
-    position: relative;
-  }
-  .panel h3 {
-    font-family: "Fraunces", serif;
-    font-weight: 500;
-    font-size: 18px;
-    letter-spacing: -0.01em;
-    margin: 0 0 12px;
     color: var(--text);
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .panel h3 .num {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    color: var(--terracotta);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-  .panel ol, .panel ul {
     margin: 0;
-    padding-left: 20px;
-    font-size: 14px;
-    line-height: 1.75;
-    color: var(--text);
+    max-width: 40ch;
+    opacity: 0.85;
     text-wrap: pretty;
     word-break: keep-all;
     overflow-wrap: anywhere;
+    line-break: strict;
+    hanging-punctuation: allow-end;
   }
-  .panel li { margin-bottom: 6px; }
-  .panel li strong { color: var(--terracotta); }
+  .nobr { white-space: nowrap; }
 
-  .kv {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px 14px;
-    font-size: 13px;
-    line-height: 1.7;
-  }
-  .kv dt {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    color: var(--text-mute);
-    text-transform: uppercase;
-    align-self: center;
-  }
-  .kv dd {
-    margin: 0;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-    word-break: break-all;
-  }
-  .kv dd.token {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    color: var(--text);
-  }
-
-  .footnote {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    color: var(--text-mute);
-    text-transform: uppercase;
-    text-align: center;
-    margin-top: 14px;
-  }
-  .footnote span { color: var(--terracotta); }
-
-  /* ========== ERROR ========== */
-  .err-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.92);
-    display: none;
-    align-items: center;
-    justify-content: center;
+  /* ============ CARD ============ */
+  .card {
+    background: var(--surface);
     border-radius: var(--radius-lg);
-    padding: 20px;
-    text-align: center;
+    overflow: hidden;
+    margin-bottom: 14px;
   }
-  .err-overlay.show { display: flex; }
-  .err-overlay .msg {
-    max-width: 80%;
+  section.block {
+    padding: 28px 22px;
   }
-  .err-overlay h4 {
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .section-head .idx {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--terracotta);
+    text-transform: uppercase;
+  }
+  .section-head h2 {
     font-family: "Fraunces", serif;
     font-size: 22px;
     font-weight: 500;
-    color: var(--terracotta);
-    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--text);
   }
-  .err-overlay p {
+  .section-head h2 em {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--text-mute);
+    margin-left: 4px;
+  }
+
+  /* ============ IDENTITY ============ */
+  .identity {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px 18px;
+    align-items: center;
+  }
+  .identity .who {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .identity .who .name {
+    font-family: "Fraunces", serif;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .identity .who .role {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+  }
+  .identity .stat {
+    text-align: right;
+    min-width: 72px;
+  }
+  .identity .stat .num {
+    font-family: "Fraunces", serif;
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--mint-deep);
+    font-variant-numeric: tabular-nums;
+  }
+  .identity .stat .lbl {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+  }
+  .identity .time-row {
+    grid-column: 1 / -1;
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
     font-size: 13px;
+    color: var(--text);
+  }
+  .identity .time-row .k {
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .identity .time-row .v {
+    font-family: "Fraunces", serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ============ PILLS ============ */
+  .field { margin-bottom: 18px; }
+  .field label.lbl {
+    font-size: 12.5px;
+    color: var(--text);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
+  .field label.lbl .req {
+    color: var(--asterisk);
+    margin-left: 2px;
+  }
+  .field label.lbl .hint {
+    margin-left: 8px;
+    font-weight: 400;
+    font-size: 11.5px;
+    color: var(--text-mute);
+    letter-spacing: 0;
+  }
+
+  .punch-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .punch-card {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 18px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    position: relative;
+    border-radius: var(--radius);
+    font-family: inherit;
+    color: var(--text);
+  }
+  .punch-card:hover { background: var(--hover-soft); }
+  .punch-card.active {
+    border-color: var(--mint);
+    box-shadow: inset 0 0 0 1px var(--mint);
+    background: var(--surface);
+  }
+  .punch-card .pc-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--terracotta);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .punch-card .pc-title {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .punch-card .pc-hint {
+    font-size: 11px;
+    color: var(--text-mute);
+    line-height: 1.4;
+  }
+  .punch-card.suggested::after {
+    content: "建議";
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: var(--mint);
+    color: var(--surface);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ============ NOTE ============ */
+  .input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    border-radius: var(--radius);
+    transition: border-color 0.18s;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--mint);
+  }
+  textarea.input {
+    min-height: 72px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  /* ============ SUBMIT ============ */
+  .submit-area {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 22px 22px 26px;
+    margin-top: 14px;
+  }
+  .btn {
+    width: 100%;
+    padding: 18px 14px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.18s;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--mint);
+    color: var(--surface);
+    border-color: var(--mint);
+  }
+  .btn-primary:hover { background: var(--mint-deep); border-color: var(--mint-deep); }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-primary:disabled {
+    background: var(--text-mute);
+    border-color: var(--text-mute);
+    cursor: not-allowed;
+  }
+  .btn-primary .arrow {
+    display: inline-block;
+    margin-left: 6px;
+    transition: transform 0.2s;
+  }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
+  .submit-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-mute);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  /* ============ SUCCESS ============ */
+  .success {
+    display: none;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    padding: 50px 26px 40px;
+  }
+  .success.show { display: block; animation: fadeIn 0.4s ease; }
+  .success .sc-icon {
+    width: 72px; height: 72px;
+    margin: 0 auto 24px;
+    border: 1.5px solid var(--mint);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hover-soft);
+  }
+  .success .sc-icon::after {
+    content: "";
+    width: 20px; height: 32px;
+    border-right: 2px solid var(--mint);
+    border-bottom: 2px solid var(--mint);
+    transform: rotate(45deg) translate(-2px, -4px);
+  }
+  .success h2 {
+    font-family: "Fraunces", serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--text);
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .success p {
+    color: var(--text);
+    line-height: 1.7;
+    margin: 0 0 12px;
+    font-size: 14px;
+  }
+  .success p .hi {
+    color: var(--terracotta);
+    font-weight: 600;
+  }
+  .success .sc-row {
+    display: inline-flex;
+    gap: 18px;
+    margin-top: 6px;
+    padding: 14px 20px;
+    background: var(--hover-soft);
+    border-radius: var(--radius);
+    font-size: 13px;
+  }
+  .success .sc-row .k {
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 6px;
+  }
+  .success .sc-row .v {
+    font-family: "Fraunces", serif;
+    font-size: 18px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ LOADING / ERROR ============ */
+  .state-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 40px 26px 36px;
+    text-align: center;
+    display: none;
+  }
+  .state-card.show { display: block; animation: fadeIn 0.3s ease; }
+  .state-card .st-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Fraunces", serif;
+    font-style: italic;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .state-card.loading .st-icon {
+    border: 1.5px solid var(--mint);
+    color: var(--mint);
+  }
+  .state-card.loading .st-icon::after {
+    content: "";
+    width: 18px; height: 18px;
+    border: 2px solid var(--mint);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .state-card.error .st-icon {
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+  }
+  .state-card.error .st-icon::after { content: "!"; }
+  .state-card h3 {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .state-card p {
+    font-size: 13.5px;
     line-height: 1.7;
     color: var(--text);
-    margin: 0;
+    margin: 0 0 8px;
+    max-width: 32ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .state-card p.muted {
+    color: var(--text-mute);
+    font-size: 12px;
   }
 
-  /* ========== RESPONSIVE / PORTRAIT ========== */
-  @media (max-aspect-ratio: 4/5), (max-width: 760px) {
-    body { padding: 22px 22px 28px; }
-    main {
-      grid-template-columns: 1fr;
-      gap: 18px;
-    }
-    .hero-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .hero-right { text-align: left; }
-    .clock { font-size: clamp(40px, 14vw, 72px); }
-    #qr-box { width: min(84vw, 420px); height: min(84vw, 420px); }
+  /* ============ FOOTER ============ */
+  footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-mute);
   }
+  footer span { color: var(--terracotta); }
 
-  /* 關閉 iPad Safari 橫桿灰色選取 */
-  ::selection { background: var(--mint); color: white; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 380px) {
+    main { padding: 18px 12px 40px; }
+    header.hero { padding: 28px 20px 24px; }
+    header.hero h1 { font-size: 38px; }
+    section.block { padding: 24px 18px; }
+    .submit-area { padding: 20px 18px 24px; }
+    .punch-cards { grid-template-columns: 1fr; }
+    .identity .stat .num { font-size: 28px; }
+  }
 </style>
 </head>
-
 <body>
 
-<!-- Topbar -->
-<div class="topbar">
-  <span class="brand"><span class="dot"></span>衡點健康  Balance Point</span>
-  <span id="status" class="status live"><span class="dot"></span><span id="status-text">CONNECTING</span></span>
-</div>
-
-<!-- Hero -->
-<div class="hero-row">
-  <div class="hero-left">
-    <div class="eyebrow">Station / 001  Punch Clock</div>
-    <h1>打卡 <em>站點</em></h1>
-  </div>
-  <div class="hero-right">
-    <div id="clock" class="clock">--:--</div>
-    <div id="date" class="date">----/--/-- ---</div>
-  </div>
-</div>
-
-<!-- Main -->
 <main>
 
-  <!-- QR -->
-  <div class="qr-card">
-    <div class="qr-inner">
-      <div class="qr-label">Scan to punch</div>
-      <div class="qr-title">請以 LINE 掃描此 QR Code</div>
-      <div id="qr-box"></div>
-      <div class="qr-hint">
-        <span class="num">How-To</span>
-        打開 LINE  <strong>掃描此 QR</strong>  系統將自動辨識身份並完成打卡
-      </div>
-    </div>
-    <div id="err-overlay" class="err-overlay">
-      <div class="msg">
-        <h4 id="err-title">連線中…</h4>
-        <p id="err-body">正在取得今日打卡 token</p>
-      </div>
-    </div>
+  <!-- Topbar -->
+  <div class="topbar">
+    <span><span class="dot"></span>衡點健康  Balance Point</span>
+    <span id="topbar-time">--:--</span>
   </div>
 
-  <!-- Side panel -->
-  <aside class="side">
+  <!-- Hero -->
+  <header class="hero">
+    <div class="eyebrow">Form / 003  Punch Clock</div>
+    <h1>打卡 <em>簽到</em></h1>
+    <p class="sub">請確認身份與打卡類型，按下「送出打卡」即完成。若系統判斷有誤，您可手動切換<span class="nobr">上班、下班、加班</span>。</p>
+  </header>
 
-    <div class="panel">
-      <h3><span class="num">01</span>使用流程</h3>
-      <ol>
-        <li>打開 LINE，點右上角掃描鈕</li>
-        <li>對準 QR Code 掃描</li>
-        <li>系統會自動帶入您的身份與今日打卡狀況</li>
-        <li>確認後按「送出」即完成</li>
-      </ol>
+  <!-- Loading state -->
+  <div id="state-loading" class="state-card loading show">
+    <div class="st-icon"></div>
+    <h3>載入中</h3>
+    <p>正在比對您的身份並取得今日打卡資訊…</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="state-error" class="state-card error">
+    <div class="st-icon"></div>
+    <h3 id="err-title">發生錯誤</h3>
+    <p id="err-body">請稍候再試</p>
+    <p id="err-foot" class="muted"></p>
+  </div>
+
+  <!-- Form -->
+  <form id="punch-form" class="card" autocomplete="off" style="display:none;">
+
+    <!-- Identity -->
+    <section class="block">
+      <div class="section-head">
+        <span class="idx">01</span>
+        <h2>身份確認 <em>/ identity</em></h2>
+      </div>
+
+      <div class="identity">
+        <div class="who">
+          <span id="id-name" class="name">—</span>
+          <span id="id-role" class="role">—</span>
+        </div>
+        <div class="stat">
+          <div id="id-count" class="num">—</div>
+          <div class="lbl">今日第幾次</div>
+        </div>
+        <div class="time-row">
+          <div>
+            <span class="k">TODAY</span><br>
+            <span id="id-date" class="v">—</span>
+          </div>
+          <div style="text-align:right;">
+            <span class="k">NOW</span><br>
+            <span id="id-time" class="v">--:--</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Punch type -->
+    <section class="block" style="border-top: 1px solid var(--line);">
+      <div class="section-head">
+        <span class="idx">02</span>
+        <h2>打卡類型 <em>/ type</em></h2>
+      </div>
+
+      <div class="field">
+        <label class="lbl">選擇打卡類型<span class="req">*</span><span class="hint">系統已預選建議選項</span></label>
+        <div class="punch-cards" id="punch-cards">
+          <button type="button" class="punch-card" data-type="in">
+            <div class="pc-tag">IN</div>
+            <div class="pc-title">上班</div>
+            <div class="pc-hint">當日第一筆</div>
+          </button>
+          <button type="button" class="punch-card" data-type="out">
+            <div class="pc-tag">OUT</div>
+            <div class="pc-title">下班</div>
+            <div class="pc-hint">當日最後一筆</div>
+          </button>
+          <button type="button" class="punch-card" data-type="extra">
+            <div class="pc-tag">EXTRA</div>
+            <div class="pc-title">加班</div>
+            <div class="pc-hint">多次進出</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:0;">
+        <label class="lbl" for="f-note">備註<span class="hint">選填，最多 60 字</span></label>
+        <textarea class="input" id="f-note" maxlength="60" placeholder="EX：請提前 / 臨時到班 / 加班原因"></textarea>
+      </div>
+    </section>
+
+    <!-- Submit -->
+    <section class="submit-area">
+      <button type="submit" id="btn-submit" class="btn btn-primary" disabled>
+        送出打卡<span class="arrow">→</span>
+      </button>
+      <p class="submit-note">送出後將同步寫入記錄並通知管理系統</p>
+    </section>
+
+  </form>
+
+  <!-- Success -->
+  <div id="success" class="success">
+    <div class="sc-icon"></div>
+    <h2>打卡完成</h2>
+    <p><span id="suc-name" class="hi">—</span> 您好，已為您記錄 <span id="suc-type" class="hi">—</span>。</p>
+    <div class="sc-row">
+      <div><span class="k">TIME</span><span id="suc-time" class="v">--:--</span></div>
+      <div><span class="k">TYPE</span><span id="suc-type2" class="v">—</span></div>
     </div>
+    <p class="submit-note" style="margin-top:20px;">此視窗可關閉。如需再次打卡，請重新掃描站點 QR。</p>
+  </div>
 
-    <div class="panel">
-      <h3><span class="num">02</span>注意事項</h3>
-      <ul>
-        <li>QR Code 每日 <strong>00:00 自動更換</strong>，截圖無效</li>
-        <li>僅限 <strong>員工本人 LINE</strong> 掃描打卡</li>
-        <li>上下班、加班由系統自動判斷，有疑義可手動調整</li>
-      </ul>
-    </div>
-
-    <div class="panel">
-      <h3><span class="num">03</span>今日資訊</h3>
-      <dl class="kv">
-        <dt>Token Date</dt><dd id="info-date">—</dd>
-        <dt>Token</dt>     <dd id="info-token" class="token">—</dd>
-        <dt>Refresh</dt>   <dd id="info-refresh">—</dd>
-      </dl>
-    </div>
-
-    <div class="footnote">
-      <span>衡點健康</span>  /  打卡站點  Station 01
-    </div>
-
-  </aside>
+  <footer>
+    <span>衡點健康</span>  /  Punch Clock  v1.0
+  </footer>
 
 </main>
 
@@ -456,132 +674,290 @@
   // ==========================================================
   // 設定
   // ==========================================================
+  const LIFF_ID      = "2007947083-EsrS7ZrM";
   const SUPABASE_URL = "https://mnjilhpztnowaplggvkk.supabase.co";
   const API_URL      = SUPABASE_URL + "/functions/v1/attendance-api";
-  const LIFF_ID      = "2007947083-EsrS7ZrM";
-  const LIFF_BASE    = "https://liff.line.me/" + LIFF_ID;
-
-  const POLL_INTERVAL_MS   = 60 * 1000;   // 每 60 秒輪詢 token
-  const CLOCK_INTERVAL_MS  = 1000;        // 每秒更新時鐘
 
   // ==========================================================
-  // 台北時間工具
+  // 狀態
   // ==========================================================
-  function taipeiNowParts() {
-    const fmt = new Intl.DateTimeFormat("en-CA", {
+  const state = {
+    token:     null,
+    lineUid:   null,
+    actor:     null,      // { id, name, role }
+    suggested: null,      // 'in' | 'out' | 'extra'
+    selected:  null,      // 'in' | 'out' | 'extra'
+    countToday:0,
+    today:     null,
+    timeHHMM:  null,
+    submitting:false,
+  };
+
+  // ==========================================================
+  // Helpers
+  // ==========================================================
+  const $ = (id) => document.getElementById(id);
+
+  function taipeiNowHHMM() {
+    return new Intl.DateTimeFormat("zh-TW", {
       timeZone: "Asia/Taipei",
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false,
-      weekday: "short",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }).format(new Date());
+  }
+
+  function roleLabel(role) {
+    return role === "coach" ? "教練  COACH" : "員工  STAFF";
+  }
+  function typeLabel(type) {
+    return { in: "上班", out: "下班", extra: "加班" }[type] || type;
+  }
+
+  function showState(which) {
+    $("state-loading").classList.remove("show");
+    $("state-error").classList.remove("show");
+    $("punch-form").style.display = "none";
+    $("success").classList.remove("show");
+
+    if (which === "loading") $("state-loading").classList.add("show");
+    else if (which === "error") $("state-error").classList.add("show");
+    else if (which === "form")  $("punch-form").style.display = "";
+    else if (which === "success") $("success").classList.add("show");
+  }
+
+  function showError(title, body, foot) {
+    $("err-title").textContent = title;
+    $("err-body").textContent  = body;
+    $("err-foot").textContent  = foot || "";
+    showState("error");
+  }
+
+  // ==========================================================
+  // 小時鐘：每秒更新 topbar + identity 時間
+  // ==========================================================
+  function tickClock() {
+    const t = taipeiNowHHMM();
+    $("topbar-time").textContent = t;
+    $("id-time").textContent     = t;
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  // ==========================================================
+  // 取 URL 的 token（?t=XXX）
+  // ==========================================================
+  function getTokenFromUrl() {
+    try {
+      // LIFF 會把 query 帶在 liff.state 或直接附在 URL
+      const params = new URLSearchParams(window.location.search);
+      let t = params.get("t") || params.get("token");
+      if (t) return t;
+
+      // LIFF 有時候會用 liff.state 包 query
+      const liffState = params.get("liff.state");
+      if (liffState) {
+        const inner = new URLSearchParams(liffState.startsWith("?") ? liffState.slice(1) : liffState);
+        t = inner.get("t") || inner.get("token");
+        if (t) return t;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ==========================================================
+  // 選取打卡類型
+  // ==========================================================
+  function setSelected(type) {
+    state.selected = type;
+    document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
+      el.classList.toggle("active", el.dataset.type === type);
     });
-    const parts = {};
-    fmt.formatToParts(new Date()).forEach(p => { parts[p.type] = p.value; });
-    return parts;
+    $("btn-submit").disabled = !type || state.submitting;
   }
 
-  function updateClock() {
-    const p = taipeiNowParts();
-    document.getElementById("clock").textContent = `${p.hour}:${p.minute}`;
-    const weekdayMap = {
-      Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU",
-      Fri:"FRI", Sat:"SAT", Sun:"SUN",
-    };
-    document.getElementById("date").textContent =
-      `${p.year}/${p.month}/${p.day}  ${weekdayMap[p.weekday] || p.weekday}`;
-  }
-
-  // ==========================================================
-  // 狀態顯示
-  // ==========================================================
-  function setStatus(mode, text) {
-    const el = document.getElementById("status");
-    const txt = document.getElementById("status-text");
-    el.classList.remove("live", "err");
-    el.classList.add(mode === "err" ? "err" : "live");
-    txt.textContent = text;
-  }
-
-  function showError(title, body) {
-    document.getElementById("err-title").textContent = title;
-    document.getElementById("err-body").textContent  = body;
-    document.getElementById("err-overlay").classList.add("show");
-  }
-  function hideError() {
-    document.getElementById("err-overlay").classList.remove("show");
-  }
-
-  // ==========================================================
-  // QR 繪製
-  // ==========================================================
-  let qrInstance = null;
-  let lastToken  = null;
-
-  function drawQR(token) {
-    const url = `${LIFF_BASE}?t=${encodeURIComponent(token)}`;
-    const box = document.getElementById("qr-box");
-    box.innerHTML = "";
-    qrInstance = new QRCode(box, {
-      text: url,
-      width:  800,   // 高解析度，適合 iPad Retina 縮放
-      height: 800,
-      colorDark:  "#58595b",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M,
+  function markSuggested(type) {
+    document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
+      el.classList.toggle("suggested", el.dataset.type === type);
     });
-    lastToken = token;
   }
 
+  document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
+    el.addEventListener("click", () => setSelected(el.dataset.type));
+  });
+
   // ==========================================================
-  // 取 token
+  // 啟動流程
   // ==========================================================
-  async function fetchToken() {
+  async function boot() {
+    // 1. 取 URL token
+    const urlToken = getTokenFromUrl();
+    if (!urlToken) {
+      showError(
+        "尚未取得 QR 資訊",
+        "請回到打卡站點（iPad），以 LINE 掃描畫面上的 QR Code 進入此頁。",
+        "直接從 LINE 首頁點此連結並不會帶入 token。"
+      );
+      return;
+    }
+    state.token = urlToken;
+
+    // 2. LIFF init + 登入 + 取 profile
+    try {
+      await liff.init({ liffId: LIFF_ID });
+
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: window.location.href });
+        return; // 會重導，此後不執行
+      }
+
+      const profile = await liff.getProfile();
+      state.lineUid = profile.userId;
+    } catch (e) {
+      console.error("[LIFF] init/login/profile 失敗：", e);
+      showError(
+        "LINE 連線異常",
+        "無法取得您的 LINE 身份，請重新開啟 LINE 後再次掃描 QR。",
+        e && e.message ? e.message : ""
+      );
+      return;
+    }
+
+    // 3. 呼叫 getPunchContext
     try {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getTodayPunchToken" }),
+        body: JSON.stringify({
+          action:  "getPunchContext",
+          token:   state.token,
+          lineUid: state.lineUid,
+        }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data || !data.success || !data.token) {
-        throw new Error(data && data.error ? data.error : `HTTP ${res.status}`);
+
+      if (!data) {
+        throw new Error(`伺服器無回應 (HTTP ${res.status})`);
       }
 
-      // 若 token 有變更才重畫
-      if (data.token !== lastToken) {
-        drawQR(data.token);
+      if (!data.success) {
+        switch (data.code) {
+          case "INVALID_TOKEN":
+            showError(
+              "QR Code 已過期",
+              "今日 QR Code 已更換，請回到 iPad 重新掃描最新的 QR。",
+              data.error || ""
+            );
+            return;
+          case "NOT_AUTHORIZED":
+            showError(
+              "身份未綁定",
+              "您的 LINE 帳號尚未登記為員工或教練，請聯絡行政人員。",
+              "LINE UID：" + (state.lineUid || "").slice(0, 12) + "…"
+            );
+            return;
+          case "NO_LINE_UID":
+            showError(
+              "LINE 登入異常",
+              "請重新開啟 LINE 後再次掃描 QR。",
+              data.error || ""
+            );
+            return;
+          default:
+            showError("系統錯誤", data.error || "未知錯誤，請稍候再試。");
+            return;
+        }
       }
 
-      document.getElementById("info-date").textContent   = data.tokenDate || "—";
-      document.getElementById("info-token").textContent  =
-        (data.token || "").slice(0, 8) + "…" + (data.token || "").slice(-4);
-      document.getElementById("info-refresh").textContent =
-        new Intl.DateTimeFormat("zh-TW", {
-          timeZone: "Asia/Taipei",
-          hour: "2-digit", minute: "2-digit", second: "2-digit",
-          hour12: false,
-        }).format(new Date());
+      // 4. 回填狀態
+      state.actor      = data.actor || null;
+      state.suggested  = data.suggestedPunchType || "in";
+      state.countToday = typeof data.countToday === "number" ? data.countToday : 0;
+      state.today      = data.today || "";
+      state.timeHHMM   = data.timeHHMM || taipeiNowHHMM();
 
-      hideError();
-      setStatus("live", "LIVE");
+      $("id-name").textContent  = state.actor ? state.actor.name : "—";
+      $("id-role").textContent  = state.actor ? roleLabel(state.actor.role) : "—";
+      $("id-count").textContent = state.countToday + 1;  // 顯示「這次將是第 N 次」
+      $("id-date").textContent  = state.today;
+      $("id-time").textContent  = state.timeHHMM;
+
+      markSuggested(state.suggested);
+      setSelected(state.suggested);   // 預選建議類型
+
+      showState("form");
     } catch (e) {
-      console.error("[punch-qr] fetchToken 失敗：", e);
-      setStatus("err", "OFFLINE");
-      showError("連線失敗", "無法取得今日打卡 token，系統將持續重試。請檢查網路或稍候再試。");
+      console.error("[getPunchContext] 失敗：", e);
+      showError(
+        "連線失敗",
+        "無法連線到打卡伺服器，請檢查網路後再試。",
+        e && e.message ? e.message : ""
+      );
     }
   }
 
   // ==========================================================
-  // 啟動
+  // 送出
   // ==========================================================
-  updateClock();
-  setInterval(updateClock, CLOCK_INTERVAL_MS);
+  $("punch-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    if (state.submitting || !state.selected) return;
+    state.submitting = true;
+    $("btn-submit").disabled = true;
+    $("btn-submit").innerHTML = "送出中…";
 
-  fetchToken();
-  setInterval(fetchToken, POLL_INTERVAL_MS);
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:       "submitPunch",
+          token:        state.token,
+          lineUid:      state.lineUid,
+          punchType:    state.selected,
+          autoDetected: state.selected === state.suggested,
+          note:         ($("f-note").value || "").trim(),
+        }),
+      });
+      const data = await res.json().catch(() => null);
 
-  // 防止 iPad 自動熄屏（盡力而為；實際建議在 iPad「設定 → 螢幕顯示與亮度 → 自動鎖定」設為「永不」）
-  // 若需 WakeLock API，可在 user gesture 後啟動（此頁為被動顯示，不另加按鈕）
+      if (!data || !data.success) {
+        const code = data && data.code ? data.code : "";
+        const msg  = (data && data.error) || `伺服器錯誤 (HTTP ${res.status})`;
+        if (code === "INVALID_TOKEN") {
+          showError("QR Code 已過期", "請回到 iPad 重新掃描最新的 QR。", msg);
+        } else if (code === "NOT_AUTHORIZED") {
+          showError("身份未綁定", "您的 LINE 帳號尚未登記為員工或教練，請聯絡行政人員。", msg);
+        } else {
+          showError("送出失敗", msg, "若重試仍失敗，請聯絡管理員。");
+        }
+        return;
+      }
+
+      // 成功
+      const r = data.record || {};
+      $("suc-name").textContent  = r.actorName || (state.actor && state.actor.name) || "您";
+      $("suc-type").textContent  = typeLabel(r.punchType || state.selected);
+      $("suc-type2").textContent = typeLabel(r.punchType || state.selected);
+      $("suc-time").textContent  = r.timeHHMM || taipeiNowHHMM();
+      showState("success");
+
+      // 嘗試在 3 秒後自動關閉 LIFF
+      setTimeout(() => {
+        try { if (liff && liff.closeWindow) liff.closeWindow(); } catch (_) {}
+      }, 2800);
+    } catch (e) {
+      console.error("[submitPunch] 失敗：", e);
+      showError("連線失敗", "送出時發生錯誤，請檢查網路後再試。", e && e.message ? e.message : "");
+    } finally {
+      state.submitting = false;
+      $("btn-submit").disabled = !state.selected;
+      $("btn-submit").innerHTML = '送出打卡<span class="arrow">→</span>';
+    }
+  });
+
+  // ==========================================================
+  // 開跑
+  // ==========================================================
+  boot();
 </script>
 
 </body>
