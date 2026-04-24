@@ -1,758 +1,710 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#faece8">
-<title>衡點健康  打卡</title>
-
-<!-- LIFF SDK -->
-<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-<!-- Fonts -->
+<meta name="theme-color" content="#e8f5ee">
+<title>衡點健康  出勤打卡</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ============================================
-     CIS TOKENS  衡點健康 Brand Palette
-  ============================================ */
   :root {
-    --bg:         #faece8;
-    --surface:    #ffffff;
-    --text:       #58595b;
-    --text-mute:  #b3b3b3;
-    --asterisk:   #b16056;
-    --line:       #b3b3b3;
-    --mint:       #93c6c5;
-    --mint-deep:  #7ab3b2;
-    --terracotta: #b16056;
-    --hover-soft: #faece8;
-    --radius: 4px;
-    --radius-lg: 8px;
+    --primary:          #5a9a7a;
+    --primary-light:    #8ec5a7;
+    --primary-bg:       #e8f5ee;
+    --clock-in:         #8ec5a7;
+    --clock-in-hover:   #7ab896;
+    --clock-out:        #e8b4a8;
+    --clock-out-hover:  #dba396;
+    --extra:            #d4b896;
+    --extra-hover:      #c7a886;
+    --background:       linear-gradient(180deg, #e8f5ee 0%, #d4ebe0 100%);
+    --card:             #ffffff;
+    --text:             #2d3748;
+    --text-muted:       #718096;
+    --text-light:       #a0aec0;
+    --border:           #e2e8f0;
+    --shadow:           0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-lg:        0 4px 16px rgba(0, 0, 0, 0.08);
   }
-
-  *, *::before, *::after { box-sizing: border-box; }
-
-  html, body {
-    margin: 0; padding: 0;
-    background: var(--bg);
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    min-height: 100vh;
     color: var(--text);
-    font-family: "Noto Sans TC", system-ui, -apple-system, sans-serif;
-    font-weight: 400;
-    -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
 
-  main {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 22px 16px 50px;
+  /* ========== Loading ========== */
+  .loading-screen {
+    position: fixed; inset: 0;
+    background: var(--background);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1000;
   }
-
-  /* ============ TOPBAR ============ */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-mute);
-    padding: 4px 6px 14px;
-  }
-  .topbar .dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    background: var(--mint);
-    border-radius: 50%;
-    margin-right: 8px;
-    transform: translateY(-1px);
-  }
-
-  /* ============ HERO ============ */
-  header.hero {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 34px 26px 30px;
-    margin-bottom: 14px;
-    position: relative;
-    overflow: hidden;
-  }
-  header.hero::after {
-    content: "";
-    position: absolute;
-    right: -40px; top: -40px;
-    width: 140px; height: 140px;
-    background: var(--mint);
-    opacity: 0.08;
-    border-radius: 50%;
-  }
-  header.hero .eyebrow {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--terracotta);
-    margin-bottom: 12px;
-  }
-  header.hero h1 {
-    font-family: "Fraunces", serif;
-    font-weight: 500;
-    font-size: clamp(36px, 9vw, 48px);
-    line-height: 1.02;
-    letter-spacing: -0.02em;
-    margin: 0 0 12px;
-    color: var(--text);
-  }
-  header.hero h1 em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--mint);
-  }
-  header.hero .sub {
-    font-size: 13.5px;
-    line-height: 1.7;
-    color: var(--text);
-    margin: 0;
-    max-width: 40ch;
-    opacity: 0.85;
-    text-wrap: pretty;
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-    line-break: strict;
-    hanging-punctuation: allow-end;
-  }
-  .nobr { white-space: nowrap; }
-
-  /* ============ CARD ============ */
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    margin-bottom: 14px;
-  }
-  section.block {
-    padding: 28px 22px;
-  }
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-  .section-head .idx {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    color: var(--terracotta);
-    text-transform: uppercase;
-  }
-  .section-head h2 {
-    font-family: "Fraunces", serif;
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    margin: 0;
-    color: var(--text);
-  }
-  .section-head h2 em {
-    font-style: italic;
-    font-weight: 400;
-    font-size: 14px;
-    color: var(--text-mute);
-    margin-left: 4px;
-  }
-
-  /* ============ IDENTITY ============ */
-  .identity {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 14px 18px;
-    align-items: center;
-  }
-  .identity .who {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-  .identity .who .name {
-    font-family: "Fraunces", serif;
-    font-size: 26px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    color: var(--text);
-    line-height: 1.1;
-  }
-  .identity .who .role {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--terracotta);
-  }
-  .identity .stat {
-    text-align: right;
-    min-width: 72px;
-  }
-  .identity .stat .num {
-    font-family: "Fraunces", serif;
-    font-size: 32px;
-    font-weight: 500;
-    line-height: 1;
-    color: var(--mint-deep);
-    font-variant-numeric: tabular-nums;
-  }
-  .identity .stat .lbl {
-    font-size: 11px;
-    color: var(--text-mute);
-    margin-top: 4px;
-    letter-spacing: 0.08em;
-  }
-  .identity .time-row {
-    grid-column: 1 / -1;
-    border-top: 1px dashed var(--line);
-    padding-top: 14px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--text);
-  }
-  .identity .time-row .k {
-    color: var(--text-mute);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-  .identity .time-row .v {
-    font-family: "Fraunces", serif;
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-  }
-
-  /* ============ PILLS ============ */
-  .field { margin-bottom: 18px; }
-  .field label.lbl {
-    font-size: 12.5px;
-    color: var(--text);
-    font-weight: 500;
-    display: block;
-    margin-bottom: 8px;
-    letter-spacing: 0.04em;
-  }
-  .field label.lbl .req {
-    color: var(--asterisk);
-    margin-left: 2px;
-  }
-  .field label.lbl .hint {
-    margin-left: 8px;
-    font-weight: 400;
-    font-size: 11.5px;
-    color: var(--text-mute);
-    letter-spacing: 0;
-  }
-
-  .punch-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-  }
-  .punch-card {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    padding: 18px 10px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-    position: relative;
-    border-radius: var(--radius);
-    font-family: inherit;
-    color: var(--text);
-  }
-  .punch-card:hover { background: var(--hover-soft); }
-  .punch-card.active {
-    border-color: var(--mint);
-    box-shadow: inset 0 0 0 1px var(--mint);
-    background: var(--surface);
-  }
-  .punch-card .pc-tag {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    color: var(--terracotta);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .punch-card .pc-title {
-    font-family: "Fraunces", serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--text);
-    line-height: 1.1;
-    margin-bottom: 4px;
-  }
-  .punch-card .pc-hint {
-    font-size: 11px;
-    color: var(--text-mute);
-    line-height: 1.4;
-  }
-  .punch-card.suggested::after {
-    content: "建議";
-    position: absolute;
-    top: -8px;
-    right: 10px;
-    background: var(--mint);
-    color: var(--surface);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 2px 8px;
-    border-radius: 2px;
-  }
-
-  /* ============ NOTE ============ */
-  .input {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--text);
-    border-radius: var(--radius);
-    transition: border-color 0.18s;
-  }
-  .input:focus {
-    outline: none;
-    border-color: var(--mint);
-  }
-  textarea.input {
-    min-height: 72px;
-    resize: vertical;
-    line-height: 1.6;
-  }
-
-  /* ============ SUBMIT ============ */
-  .submit-area {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 22px 22px 26px;
-    margin-top: 14px;
-  }
-  .btn {
-    width: 100%;
-    padding: 18px 14px;
-    font-family: "Noto Sans TC", sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: all 0.18s;
-    border-radius: var(--radius);
-    border: 1px solid transparent;
-    text-align: center;
-  }
-  .btn-primary {
-    background: var(--mint);
-    color: var(--surface);
-    border-color: var(--mint);
-  }
-  .btn-primary:hover { background: var(--mint-deep); border-color: var(--mint-deep); }
-  .btn-primary:active { transform: scale(0.99); }
-  .btn-primary:disabled {
-    background: var(--text-mute);
-    border-color: var(--text-mute);
-    cursor: not-allowed;
-  }
-  .btn-primary .arrow {
-    display: inline-block;
-    margin-left: 6px;
-    transition: transform 0.2s;
-  }
-  .btn-primary:hover .arrow { transform: translateX(3px); }
-  .submit-note {
-    text-align: center;
-    font-size: 11.5px;
-    color: var(--text-mute);
-    margin-top: 12px;
-    line-height: 1.6;
-  }
-
-  /* ============ SUCCESS ============ */
-  .success {
-    display: none;
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    text-align: center;
-    padding: 50px 26px 40px;
-  }
-  .success.show { display: block; animation: fadeIn 0.4s ease; }
-  .success .sc-icon {
+  .loading-icon {
     width: 72px; height: 72px;
-    margin: 0 auto 24px;
-    border: 1.5px solid var(--mint);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--hover-soft);
+    background: white;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-lg);
+    animation: pulse 2s infinite;
+    padding: 10px;
   }
-  .success .sc-icon::after {
-    content: "";
-    width: 20px; height: 32px;
-    border-right: 2px solid var(--mint);
-    border-bottom: 2px solid var(--mint);
-    transform: rotate(45deg) translate(-2px, -4px);
-  }
-  .success h2 {
-    font-family: "Fraunces", serif;
-    font-size: 32px;
-    font-weight: 500;
-    color: var(--text);
-    margin: 0 0 10px;
-    letter-spacing: -0.01em;
-  }
-  .success p {
-    color: var(--text);
-    line-height: 1.7;
-    margin: 0 0 12px;
+  .loading-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .loading-text {
+    margin-top: 16px;
+    color: var(--text-muted);
     font-size: 14px;
   }
-  .success p .hi {
-    color: var(--terracotta);
-    font-weight: 600;
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.05); opacity: 0.8; }
   }
-  .success .sc-row {
-    display: inline-flex;
-    gap: 18px;
-    margin-top: 6px;
-    padding: 14px 20px;
-    background: var(--hover-soft);
-    border-radius: var(--radius);
-    font-size: 13px;
+
+  /* ========== Error ========== */
+  .error-screen {
+    position: fixed; inset: 0;
+    background: var(--background);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px; z-index: 1000;
   }
-  .success .sc-row .k {
-    color: var(--text-mute);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-right: 6px;
+  .error-screen.show { display: flex; }
+  .error-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 360px; width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
   }
-  .success .sc-row .v {
-    font-family: "Fraunces", serif;
-    font-size: 18px;
+  .error-icon {
+    width: 64px; height: 64px;
+    background: #fef2f2;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .error-icon svg { width: 32px; height: 32px; color: #ef4444; }
+  .error-title {
+    font-size: 20px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .error-message {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+  .error-tips {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: left;
+  }
+  .error-tips-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .error-tips ul {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-left: 16px;
+    line-height: 1.7;
+  }
+
+  /* ========== App ========== */
+  .app { display: none; min-height: 100vh; }
+  .app.show { display: block; }
+
+  /* ---- Header ---- */
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-content {
+    max-width: 480px; margin: 0 auto;
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 40px; height: 40px;
+    background: white;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+    padding: 5px;
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .header-title { font-weight: 600; font-size: 16px; color: var(--text); }
+  .header-subtitle { font-size: 12px; color: var(--text-muted); }
+
+  /* ---- Main ---- */
+  .main {
+    max-width: 480px; margin: 0 auto;
+    padding: 32px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+
+  /* User */
+  .user-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .user-avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-avatar svg { width: 40px; height: 40px; color: white; }
+  .user-avatar::after {
+    content: '';
+    position: absolute; bottom: 4px; right: 4px;
+    width: 16px; height: 16px;
+    background: #48bb78;
+    border: 3px solid #e8f5ee;
+    border-radius: 50%;
+  }
+  .user-name { font-size: 24px; font-weight: 600; color: var(--text); }
+  .user-id {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Date */
+  .date-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    border-radius: 30px;
+    box-shadow: var(--shadow);
+    font-size: 14px;
+    color: var(--text);
+  }
+  .date-badge svg { width: 18px; height: 18px; color: var(--text-muted); }
+
+  /* Time */
+  .time-display {
+    display: flex; align-items: center; justify-content: center;
+  }
+  .time-digit {
+    font-size: 72px; font-weight: 700;
     color: var(--text);
     font-variant-numeric: tabular-nums;
-  }
-
-  /* ============ LOADING / ERROR ============ */
-  .state-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 40px 26px 36px;
-    text-align: center;
-    display: none;
-  }
-  .state-card.show { display: block; animation: fadeIn 0.3s ease; }
-  .state-card .st-icon {
-    width: 56px; height: 56px;
-    margin: 0 auto 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: "Fraunces", serif;
-    font-style: italic;
-    font-size: 26px;
-    font-weight: 500;
     line-height: 1;
   }
-  .state-card.loading .st-icon {
-    border: 1.5px solid var(--mint);
-    color: var(--mint);
+  .time-separator {
+    font-size: 72px; font-weight: 300;
+    color: var(--text-light);
+    line-height: 1;
+    margin: 0 4px;
   }
-  .state-card.loading .st-icon::after {
-    content: "";
-    width: 18px; height: 18px;
-    border: 2px solid var(--mint);
-    border-top-color: transparent;
+
+  /* Status pill */
+  .status-card {
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .status-icon {
+    width: 40px; height: 40px;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    display: flex; align-items: center; justify-content: center;
+    background: #dcfce7;
+    flex-shrink: 0;
   }
-  .state-card.error .st-icon {
-    border: 1.5px solid var(--terracotta);
-    color: var(--terracotta);
-  }
-  .state-card.error .st-icon::after { content: "!"; }
-  .state-card h3 {
-    font-family: "Fraunces", serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--text);
-    margin: 0 0 8px;
-    letter-spacing: -0.01em;
-  }
-  .state-card p {
-    font-size: 13.5px;
-    line-height: 1.7;
-    color: var(--text);
-    margin: 0 0 8px;
-    max-width: 32ch;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .state-card p.muted {
-    color: var(--text-mute);
-    font-size: 12px;
-  }
+  .status-icon svg { width: 20px; height: 20px; color: #22c55e; }
+  .status-icon.warn { background: #fef3c7; }
+  .status-icon.warn svg { color: #f59e0b; }
+  .status-text { font-size: 14px; font-weight: 500; color: var(--text); }
+  .status-detail { font-size: 12px; color: var(--text-muted); }
 
-  /* ============ FOOTER ============ */
-  footer {
-    margin-top: 24px;
-    padding-top: 20px;
-    text-align: center;
-    font-family: "JetBrains Mono", monospace;
+  /* Clock buttons */
+  .clock-buttons {
+    display: flex; justify-content: center;
+    gap: 20px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+  }
+  .clock-btn-wrapper {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    position: relative;
+  }
+  .clock-btn {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+  }
+  .clock-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .clock-btn:not(:disabled):hover { transform: scale(1.05); }
+  .clock-btn:not(:disabled):active { transform: scale(0.95); }
+  .clock-btn.clock-in    { background: var(--clock-in); }
+  .clock-btn.clock-in:not(:disabled):hover    { background: var(--clock-in-hover); }
+  .clock-btn.clock-out   { background: var(--clock-out); }
+  .clock-btn.clock-out:not(:disabled):hover   { background: var(--clock-out-hover); }
+  .clock-btn.clock-extra { background: var(--extra); }
+  .clock-btn.clock-extra:not(:disabled):hover { background: var(--extra-hover); }
+  .clock-btn svg { width: 36px; height: 36px; color: white; }
+  .clock-btn-label { font-size: 14px; font-weight: 500; color: var(--text); }
+  .clock-btn-label.clock-in    { color: var(--primary); }
+  .clock-btn-label.clock-out   { color: #c97a6d; }
+  .clock-btn-label.clock-extra { color: #a68558; }
+
+  /* Suggestion ring */
+  .clock-btn-wrapper.suggested .clock-btn::before {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    opacity: 0.55;
+    animation: ringPulse 1.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1);    opacity: 0.55; }
+    50%      { transform: scale(1.12); opacity: 0; }
+  }
+  .suggest-badge {
+    position: absolute;
+    top: -8px; right: -4px;
+    background: var(--primary);
+    color: white;
     font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-mute);
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    pointer-events: none;
+    display: none;
   }
-  footer span { color: var(--terracotta); }
+  .clock-btn-wrapper.suggested .suggest-badge { display: inline-block; }
 
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  /* Button spinner */
+  .clock-btn .btn-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    display: none;
+  }
+  .clock-btn.loading svg { display: none; }
+  .clock-btn.loading .btn-spinner { display: block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  @media (max-width: 380px) {
-    main { padding: 18px 12px 40px; }
-    header.hero { padding: 28px 20px 24px; }
-    header.hero h1 { font-size: 38px; }
-    section.block { padding: 24px 18px; }
-    .submit-area { padding: 20px 18px 24px; }
-    .punch-cards { grid-template-columns: 1fr; }
-    .identity .stat .num { font-size: 28px; }
+  /* Note */
+  .note-field { width: 100%; }
+  .note-label {
+    font-size: 12px; color: var(--text-muted);
+    margin-bottom: 6px; padding-left: 4px;
+  }
+  .note-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    resize: none;
+    min-height: 44px;
+    transition: border-color 0.2s;
+  }
+  .note-input:focus { outline: none; border-color: var(--primary); }
+
+  /* Attendance card */
+  .attendance-card {
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .attendance-title {
+    font-size: 16px; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .attendance-title svg { width: 20px; height: 20px; color: var(--text-muted); }
+  .attendance-count {
+    margin-left: auto;
+    font-size: 12px; color: var(--text-muted);
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .attendance-items { display: flex; flex-direction: column; gap: 12px; }
+  .attendance-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+  }
+  .attendance-item-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .attendance-item-icon.in    { background: rgba(142, 197, 167, 0.2); }
+  .attendance-item-icon.out   { background: rgba(232, 180, 168, 0.2); }
+  .attendance-item-icon.extra { background: rgba(212, 184, 150, 0.2); }
+  .attendance-item-icon svg { width: 18px; height: 18px; }
+  .attendance-item-icon.in    svg { color: var(--primary); }
+  .attendance-item-icon.out   svg { color: #c97a6d; }
+  .attendance-item-icon.extra svg { color: #a68558; }
+  .attendance-item-content { flex: 1; }
+  .attendance-item-label { font-size: 12px; color: var(--text-muted); }
+  .attendance-item-time {
+    font-size: 18px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .attendance-empty {
+    text-align: center; color: var(--text-light);
+    font-size: 13px; padding: 18px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none;
+    padding: 0 16px;
+    max-width: 100%;
+  }
+  .toast {
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    animation: toastIn 0.3s ease;
+    color: white;
+    pointer-events: auto;
+    max-width: 420px;
+    text-align: center;
+  }
+  .toast.success { background: #22c55e; }
+  .toast.error   { background: #ef4444; }
+  .toast.warning { background: #f59e0b; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Fade stagger */
+  .fade-in { animation: fadeIn 0.5s ease both; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+  .delay-5 { animation-delay: 0.40s; }
+
+  @media (max-width: 360px) {
+    .time-digit, .time-separator { font-size: 60px; }
+    .clock-btn { width: 88px; height: 88px; }
+    .clock-btn svg, .clock-btn .btn-spinner { width: 32px; height: 32px; }
   }
 </style>
 </head>
 <body>
 
-<main>
-
-  <!-- Topbar -->
-  <div class="topbar">
-    <span><span class="dot"></span>衡點健康  Balance Point</span>
-    <span id="topbar-time">--:--</span>
+<!-- Loading -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="loading-icon">
+    <img src="https://ik.imagekit.io/hanhealth/assets/logo.png?updatedAt=1772155101138" alt="衡點健康">
   </div>
+  <p class="loading-text" id="loadingText">正在連接 LINE…</p>
+</div>
 
-  <!-- Hero -->
-  <header class="hero">
-    <div class="eyebrow">Form / 003  Punch Clock</div>
-    <h1>打卡 <em>簽到</em></h1>
-    <p class="sub">請確認身份與打卡類型，按下「送出打卡」即完成。若系統判斷有誤，您可手動切換<span class="nobr">上班、下班、加班</span>。</p>
+<!-- Error -->
+<div id="errorScreen" class="error-screen">
+  <div class="error-card">
+    <div class="error-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <h2 class="error-title" id="errorTitle">連接失敗</h2>
+    <p class="error-message" id="errorMessage">無法連接</p>
+    <div class="error-tips">
+      <p class="error-tips-title">請確認：</p>
+      <ul id="errorTips">
+        <li>此頁面從打卡站 QR 掃入</li>
+        <li>已在 LINE 內開啟</li>
+        <li>網路連線正常</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-logo">
+          <img src="https://ik.imagekit.io/hanhealth/assets/logo.png?updatedAt=1772155101138" alt="衡點健康">
+        </div>
+        <div>
+          <h1 class="header-title">衡點 出勤</h1>
+          <p class="header-subtitle" id="roleBadge">—</p>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <!-- Loading state -->
-  <div id="state-loading" class="state-card loading show">
-    <div class="st-icon"></div>
-    <h3>載入中</h3>
-    <p>正在比對您的身份並取得今日打卡資訊…</p>
-  </div>
+  <main class="main">
 
-  <!-- Error state -->
-  <div id="state-error" class="state-card error">
-    <div class="st-icon"></div>
-    <h3 id="err-title">發生錯誤</h3>
-    <p id="err-body">請稍候再試</p>
-    <p id="err-foot" class="muted"></p>
-  </div>
-
-  <!-- Form -->
-  <form id="punch-form" class="card" autocomplete="off" style="display:none;">
-
-    <!-- Identity -->
-    <section class="block">
-      <div class="section-head">
-        <span class="idx">01</span>
-        <h2>身份確認 <em>/ identity</em></h2>
+    <!-- User -->
+    <section class="user-section fade-in">
+      <div class="user-avatar" id="userAvatar">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
       </div>
-
-      <div class="identity">
-        <div class="who">
-          <span id="id-name" class="name">—</span>
-          <span id="id-role" class="role">—</span>
-        </div>
-        <div class="stat">
-          <div id="id-count" class="num">—</div>
-          <div class="lbl">今日第幾次</div>
-        </div>
-        <div class="time-row">
-          <div>
-            <span class="k">TODAY</span><br>
-            <span id="id-date" class="v">—</span>
-          </div>
-          <div style="text-align:right;">
-            <span class="k">NOW</span><br>
-            <span id="id-time" class="v">--:--</span>
-          </div>
-        </div>
+      <h2 class="user-name" id="userName">—</h2>
+      <div class="user-id">
+        <span>LINE:</span>
+        <span id="userId">—</span>
       </div>
     </section>
 
-    <!-- Punch type -->
-    <section class="block" style="border-top: 1px solid var(--line);">
-      <div class="section-head">
-        <span class="idx">02</span>
-        <h2>打卡類型 <em>/ type</em></h2>
-      </div>
-
-      <div class="field">
-        <label class="lbl">選擇打卡類型<span class="req">*</span><span class="hint">系統已預選建議選項</span></label>
-        <div class="punch-cards" id="punch-cards">
-          <button type="button" class="punch-card" data-type="in">
-            <div class="pc-tag">IN</div>
-            <div class="pc-title">上班</div>
-            <div class="pc-hint">當日第一筆</div>
-          </button>
-          <button type="button" class="punch-card" data-type="out">
-            <div class="pc-tag">OUT</div>
-            <div class="pc-title">下班</div>
-            <div class="pc-hint">當日最後一筆</div>
-          </button>
-          <button type="button" class="punch-card" data-type="extra">
-            <div class="pc-tag">EXTRA</div>
-            <div class="pc-title">加班</div>
-            <div class="pc-hint">多次進出</div>
-          </button>
-        </div>
-      </div>
-
-      <div class="field" style="margin-bottom:0;">
-        <label class="lbl" for="f-note">備註<span class="hint">選填，最多 60 字</span></label>
-        <textarea class="input" id="f-note" maxlength="60" placeholder="EX：請提前 / 臨時到班 / 加班原因"></textarea>
+    <!-- Date -->
+    <section class="fade-in delay-1">
+      <div class="date-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span id="dateDisplay">—</span>
       </div>
     </section>
 
-    <!-- Submit -->
-    <section class="submit-area">
-      <button type="submit" id="btn-submit" class="btn btn-primary" disabled>
-        送出打卡<span class="arrow">→</span>
-      </button>
-      <p class="submit-note">送出後將同步寫入記錄並通知管理系統</p>
+    <!-- Time -->
+    <section class="fade-in delay-2">
+      <div class="time-display">
+        <span class="time-digit" id="timeHour">--</span>
+        <span class="time-separator">:</span>
+        <span class="time-digit" id="timeMinute">--</span>
+        <span class="time-separator">:</span>
+        <span class="time-digit" id="timeSecond">--</span>
+      </div>
     </section>
 
-  </form>
+    <!-- Status -->
+    <section class="status-card fade-in delay-3" id="statusCard">
+      <div class="status-icon" id="statusIcon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <p class="status-text" id="statusText">已驗證打卡 QR</p>
+        <p class="status-detail" id="statusDetail">—</p>
+      </div>
+    </section>
 
-  <!-- Success -->
-  <div id="success" class="success">
-    <div class="sc-icon"></div>
-    <h2>打卡完成</h2>
-    <p><span id="suc-name" class="hi">—</span> 您好，已為您記錄 <span id="suc-type" class="hi">—</span>。</p>
-    <div class="sc-row">
-      <div><span class="k">TIME</span><span id="suc-time" class="v">--:--</span></div>
-      <div><span class="k">TYPE</span><span id="suc-type2" class="v">—</span></div>
-    </div>
-    <p class="submit-note" style="margin-top:20px;">此視窗可關閉。如需再次打卡，請重新掃描站點 QR。</p>
-  </div>
+    <!-- Clock buttons -->
+    <section class="clock-buttons fade-in delay-4">
 
-  <footer>
-    <span>衡點健康</span>  /  Punch Clock  v1.0
-  </footer>
+      <div class="clock-btn-wrapper" id="wrap-in">
+        <button class="clock-btn clock-in" id="btn-in" data-type="in" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          <div class="btn-spinner"></div>
+        </button>
+        <span class="clock-btn-label clock-in">上班</span>
+        <span class="suggest-badge">建議</span>
+      </div>
 
-</main>
+      <div class="clock-btn-wrapper" id="wrap-out">
+        <button class="clock-btn clock-out" id="btn-out" data-type="out" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <div class="btn-spinner"></div>
+        </button>
+        <span class="clock-btn-label clock-out">下班</span>
+        <span class="suggest-badge">建議</span>
+      </div>
+
+      <div class="clock-btn-wrapper" id="wrap-extra">
+        <button class="clock-btn clock-extra" id="btn-extra" data-type="extra" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div class="btn-spinner"></div>
+        </button>
+        <span class="clock-btn-label clock-extra">加班</span>
+        <span class="suggest-badge">建議</span>
+      </div>
+
+    </section>
+
+    <!-- Note -->
+    <section class="note-field fade-in delay-4">
+      <div class="note-label">備註 (選填，最多 60 字)</div>
+      <textarea id="noteInput" class="note-input" maxlength="60" placeholder="EX：請提前 / 加班原因 / 臨時到班"></textarea>
+    </section>
+
+    <!-- Today record -->
+    <section class="attendance-card fade-in delay-5">
+      <h3 class="attendance-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        今日出勤記錄
+        <span class="attendance-count" id="countBadge">0 次</span>
+      </h3>
+      <div class="attendance-items" id="recordItems">
+        <div class="attendance-empty">尚未打卡</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">衡點健康 Hendia  /  Punch Clock v1.0</footer>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
-  // ==========================================================
-  // 設定
-  // ==========================================================
+  // ==================== 設定 ====================
   const LIFF_ID      = "2007947083-EsrS7ZrM";
   const SUPABASE_URL = "https://mnjilhpztnowaplggvkk.supabase.co";
   const API_URL      = SUPABASE_URL + "/functions/v1/attendance-api";
 
-  // ==========================================================
-  // 狀態
-  // ==========================================================
+  // ==================== 全域狀態 ====================
   const state = {
-    token:     null,
-    lineUid:   null,
-    actor:     null,      // { id, name, role }
-    suggested: null,      // 'in' | 'out' | 'extra'
-    selected:  null,      // 'in' | 'out' | 'extra'
-    countToday:0,
-    today:     null,
-    timeHHMM:  null,
-    submitting:false,
+    token:       null,
+    lineUid:     null,
+    actor:       null,   // { id, name, role }
+    suggested:   null,
+    countToday:  0,
+    today:       "",
+    timeHHMM:    "",
+    submitting:  false,
+    records:     [],     // 本次 session 成功打出的紀錄（optimistic）
   };
 
-  // ==========================================================
-  // Helpers
-  // ==========================================================
   const $ = (id) => document.getElementById(id);
 
-  function taipeiNowHHMM() {
-    return new Intl.DateTimeFormat("zh-TW", {
+  // ==================== 狀態切換 ====================
+  function showLoading(text) {
+    $("errorScreen").classList.remove("show");
+    $("app").classList.remove("show");
+    $("loadingScreen").style.display = "flex";
+    if (text) $("loadingText").textContent = text;
+  }
+  function showApp() {
+    $("loadingScreen").style.display = "none";
+    $("errorScreen").classList.remove("show");
+    $("app").classList.add("show");
+  }
+  function showError(title, message, tips) {
+    $("loadingScreen").style.display = "none";
+    $("app").classList.remove("show");
+    $("errorTitle").textContent   = title || "發生錯誤";
+    $("errorMessage").textContent = message || "";
+    if (Array.isArray(tips) && tips.length) {
+      $("errorTips").innerHTML = tips.map(t => `<li>${t}</li>`).join("");
+    }
+    $("errorScreen").classList.add("show");
+  }
+
+  // ==================== Toast ====================
+  function toast(type, msg, ms) {
+    const container = $("toastContainer");
+    const el = document.createElement("div");
+    el.className = "toast " + (type || "success");
+    el.textContent = msg;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = "opacity 0.3s ease";
+      el.style.opacity = "0";
+      setTimeout(() => el.remove(), 320);
+    }, ms || 2600);
+  }
+
+  // ==================== 時鐘 ====================
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function taipeiNow() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Taipei",
-      hour: "2-digit", minute: "2-digit", hour12: false,
-    }).format(new Date());
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false, weekday: "short",
+    }).formatToParts(new Date());
+    const o = {};
+    parts.forEach(p => o[p.type] = p.value);
+    return o;
+  }
+  function updateClock() {
+    const p = taipeiNow();
+    $("timeHour").textContent   = p.hour;
+    $("timeMinute").textContent = p.minute;
+    $("timeSecond").textContent = p.second;
+    const wkMap = { Mon:"一", Tue:"二", Wed:"三", Thu:"四", Fri:"五", Sat:"六", Sun:"日" };
+    $("dateDisplay").textContent =
+      `${p.year}年${parseInt(p.month,10)}月${parseInt(p.day,10)}日 星期${wkMap[p.weekday] || p.weekday}`;
+  }
+  function taipeiHHMMSS() {
+    const p = taipeiNow();
+    return `${p.hour}:${p.minute}:${p.second}`;
   }
 
-  function roleLabel(role) {
-    return role === "coach" ? "教練  COACH" : "員工  STAFF";
-  }
-  function typeLabel(type) {
-    return { in: "上班", out: "下班", extra: "加班" }[type] || type;
-  }
-
-  function showState(which) {
-    $("state-loading").classList.remove("show");
-    $("state-error").classList.remove("show");
-    $("punch-form").style.display = "none";
-    $("success").classList.remove("show");
-
-    if (which === "loading") $("state-loading").classList.add("show");
-    else if (which === "error") $("state-error").classList.add("show");
-    else if (which === "form")  $("punch-form").style.display = "";
-    else if (which === "success") $("success").classList.add("show");
-  }
-
-  function showError(title, body, foot) {
-    $("err-title").textContent = title;
-    $("err-body").textContent  = body;
-    $("err-foot").textContent  = foot || "";
-    showState("error");
-  }
-
-  // ==========================================================
-  // 小時鐘：每秒更新 topbar + identity 時間
-  // ==========================================================
-  function tickClock() {
-    const t = taipeiNowHHMM();
-    $("topbar-time").textContent = t;
-    $("id-time").textContent     = t;
-  }
-  setInterval(tickClock, 1000);
-  tickClock();
-
-  // ==========================================================
-  // 取 URL 的 token（?t=XXX）
-  // ==========================================================
+  // ==================== URL token ====================
   function getTokenFromUrl() {
     try {
-      // LIFF 會把 query 帶在 liff.state 或直接附在 URL
       const params = new URLSearchParams(window.location.search);
       let t = params.get("t") || params.get("token");
       if (t) return t;
-
-      // LIFF 有時候會用 liff.state 包 query
       const liffState = params.get("liff.state");
       if (liffState) {
         const inner = new URLSearchParams(liffState.startsWith("?") ? liffState.slice(1) : liffState);
@@ -763,146 +715,165 @@
     return null;
   }
 
-  // ==========================================================
-  // 選取打卡類型
-  // ==========================================================
-  function setSelected(type) {
-    state.selected = type;
-    document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
-      el.classList.toggle("active", el.dataset.type === type);
-    });
-    $("btn-submit").disabled = !type || state.submitting;
+  // ==================== 顯示工具 ====================
+  function roleText(role) {
+    return role === "coach" ? "教練 Coach" : "員工 Staff";
+  }
+  function typeLabel(type) {
+    return { in:"上班", out:"下班", extra:"加班" }[type] || type;
   }
 
   function markSuggested(type) {
-    document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
-      el.classList.toggle("suggested", el.dataset.type === type);
+    ["in", "out", "extra"].forEach(t => {
+      $("wrap-" + t).classList.toggle("suggested", t === type);
     });
   }
 
-  document.querySelectorAll("#punch-cards .punch-card").forEach(el => {
-    el.addEventListener("click", () => setSelected(el.dataset.type));
-  });
+  function setButtonsEnabled(enabled) {
+    ["in", "out", "extra"].forEach(t => {
+      $("btn-" + t).disabled = !enabled;
+    });
+  }
 
-  // ==========================================================
-  // 啟動流程
-  // ==========================================================
+  function renderRecords() {
+    const items = $("recordItems");
+    $("countBadge").textContent = state.records.length + " 次";
+
+    if (state.records.length === 0) {
+      items.innerHTML = '<div class="attendance-empty">尚未打卡</div>';
+      return;
+    }
+
+    const iconPath = {
+      in:    `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />`,
+      out:   `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />`,
+      extra: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+    };
+
+    items.innerHTML = state.records.map(r => `
+      <div class="attendance-item">
+        <div class="attendance-item-icon ${r.type}">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            ${iconPath[r.type] || iconPath.in}
+          </svg>
+        </div>
+        <div class="attendance-item-content">
+          <p class="attendance-item-label">${typeLabel(r.type)}打卡</p>
+          <p class="attendance-item-time">${r.time}</p>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // ==================== 啟動 ====================
   async function boot() {
-    // 1. 取 URL token
-    const urlToken = getTokenFromUrl();
-    if (!urlToken) {
+    showLoading("正在連接 LINE…");
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 1. 檢查 URL token
+    const t = getTokenFromUrl();
+    if (!t) {
       showError(
-        "尚未取得 QR 資訊",
-        "請回到打卡站點（iPad），以 LINE 掃描畫面上的 QR Code 進入此頁。",
-        "直接從 LINE 首頁點此連結並不會帶入 token。"
+        "尚未取得打卡 QR",
+        "此頁需要從打卡站（iPad）以 LINE 掃描 QR Code 進入。",
+        ["回到打卡站 QR 畫面", "以 LINE 掃描螢幕上的 QR", "即可自動開啟此頁"]
       );
       return;
     }
-    state.token = urlToken;
+    state.token = t;
 
-    // 2. LIFF init + 登入 + 取 profile
+    // 2. LIFF
     try {
+      $("loadingText").textContent = "正在驗證 LINE 身份…";
       await liff.init({ liffId: LIFF_ID });
-
       if (!liff.isLoggedIn()) {
         liff.login({ redirectUri: window.location.href });
-        return; // 會重導，此後不執行
+        return;
       }
-
       const profile = await liff.getProfile();
       state.lineUid = profile.userId;
+      if (profile.pictureUrl) {
+        $("userAvatar").innerHTML = `<img src="${profile.pictureUrl}" alt="">`;
+      }
     } catch (e) {
-      console.error("[LIFF] init/login/profile 失敗：", e);
+      console.error("[LIFF] fail:", e);
       showError(
         "LINE 連線異常",
-        "無法取得您的 LINE 身份，請重新開啟 LINE 後再次掃描 QR。",
-        e && e.message ? e.message : ""
+        "請在 LINE App 內重新掃描打卡 QR。",
+        ["以 LINE App 掃描 QR", "確認 LINE 為最新版", "網路連線正常"]
       );
       return;
     }
 
-    // 3. 呼叫 getPunchContext
+    // 3. getPunchContext
     try {
+      $("loadingText").textContent = "正在比對身份…";
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action:  "getPunchContext",
-          token:   state.token,
-          lineUid: state.lineUid,
-        }),
+        body: JSON.stringify({ action: "getPunchContext", token: state.token, lineUid: state.lineUid }),
       });
       const data = await res.json().catch(() => null);
-
-      if (!data) {
-        throw new Error(`伺服器無回應 (HTTP ${res.status})`);
-      }
+      if (!data) throw new Error("伺服器無回應 (HTTP " + res.status + ")");
 
       if (!data.success) {
         switch (data.code) {
           case "INVALID_TOKEN":
-            showError(
-              "QR Code 已過期",
-              "今日 QR Code 已更換，請回到 iPad 重新掃描最新的 QR。",
-              data.error || ""
-            );
+            showError("QR Code 已過期", data.error || "今日 QR Code 已更換，請回到 iPad 重新掃描。",
+              ["回到 iPad 打卡站", "重新掃描最新的 QR", "每日 00:00 自動換新"]);
             return;
           case "NOT_AUTHORIZED":
-            showError(
-              "身份未綁定",
-              "您的 LINE 帳號尚未登記為員工或教練，請聯絡行政人員。",
-              "LINE UID：" + (state.lineUid || "").slice(0, 12) + "…"
-            );
+            showError("身份未綁定",
+              data.error || "您的 LINE 帳號尚未登記為員工或教練，請聯絡行政人員。",
+              ["請管理員於後台設定您的 LINE UID", "LINE UID：" + (state.lineUid || "").slice(0, 12) + "…"]);
             return;
           case "NO_LINE_UID":
-            showError(
-              "LINE 登入異常",
-              "請重新開啟 LINE 後再次掃描 QR。",
-              data.error || ""
-            );
+            showError("LINE 登入異常", data.error || "請重新掃描 QR。", []);
             return;
           default:
-            showError("系統錯誤", data.error || "未知錯誤，請稍候再試。");
+            showError("系統錯誤", data.error || "未知錯誤，請稍候再試。", []);
             return;
         }
       }
 
-      // 4. 回填狀態
+      // 綁定狀態
       state.actor      = data.actor || null;
       state.suggested  = data.suggestedPunchType || "in";
       state.countToday = typeof data.countToday === "number" ? data.countToday : 0;
       state.today      = data.today || "";
-      state.timeHHMM   = data.timeHHMM || taipeiNowHHMM();
+      state.timeHHMM   = data.timeHHMM || "";
 
-      $("id-name").textContent  = state.actor ? state.actor.name : "—";
-      $("id-role").textContent  = state.actor ? roleLabel(state.actor.role) : "—";
-      $("id-count").textContent = state.countToday + 1;  // 顯示「這次將是第 N 次」
-      $("id-date").textContent  = state.today;
-      $("id-time").textContent  = state.timeHHMM;
+      // 右上 header
+      $("roleBadge").textContent = roleText(state.actor ? state.actor.role : "staff");
+      // 使用者區
+      $("userName").textContent  = state.actor ? state.actor.name : (await liff.getProfile()).displayName;
+      $("userId").textContent    = state.lineUid ? state.lineUid.slice(0, 10) + "…" : "—";
+      // 狀態卡
+      $("statusText").textContent   = "已驗證  可以打卡";
+      $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次  建議：${typeLabel(state.suggested)}`;
 
       markSuggested(state.suggested);
-      setSelected(state.suggested);   // 預選建議類型
+      setButtonsEnabled(true);
 
-      showState("form");
+      showApp();
     } catch (e) {
-      console.error("[getPunchContext] 失敗：", e);
-      showError(
-        "連線失敗",
-        "無法連線到打卡伺服器，請檢查網路後再試。",
-        e && e.message ? e.message : ""
-      );
+      console.error("[getPunchContext] fail:", e);
+      showError("連線失敗", e && e.message ? e.message : "無法連線到打卡伺服器。", []);
     }
   }
 
-  // ==========================================================
-  // 送出
-  // ==========================================================
-  $("punch-form").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    if (state.submitting || !state.selected) return;
+  // ==================== 送出 ====================
+  async function doPunch(type) {
+    if (state.submitting) return;
     state.submitting = true;
-    $("btn-submit").disabled = true;
-    $("btn-submit").innerHTML = "送出中…";
+
+    const btn = $("btn-" + type);
+    btn.classList.add("loading");
+    setButtonsEnabled(false);
+
+    const autoDetected = (type === state.suggested);
+    const note = ($("noteInput").value || "").trim();
 
     try {
       const res = await fetch(API_URL, {
@@ -912,52 +883,66 @@
           action:       "submitPunch",
           token:        state.token,
           lineUid:      state.lineUid,
-          punchType:    state.selected,
-          autoDetected: state.selected === state.suggested,
-          note:         ($("f-note").value || "").trim(),
+          punchType:    type,
+          autoDetected: autoDetected,
+          note:         note,
         }),
       });
       const data = await res.json().catch(() => null);
 
       if (!data || !data.success) {
-        const code = data && data.code ? data.code : "";
+        const code = data && data.code;
         const msg  = (data && data.error) || `伺服器錯誤 (HTTP ${res.status})`;
         if (code === "INVALID_TOKEN") {
-          showError("QR Code 已過期", "請回到 iPad 重新掃描最新的 QR。", msg);
+          toast("error", "QR 已過期，請重新掃描");
+          setTimeout(() => showError("QR Code 已過期", msg, ["回到 iPad 重新掃描 QR"]), 1200);
         } else if (code === "NOT_AUTHORIZED") {
-          showError("身份未綁定", "您的 LINE 帳號尚未登記為員工或教練，請聯絡行政人員。", msg);
+          toast("error", "身份未綁定");
         } else {
-          showError("送出失敗", msg, "若重試仍失敗，請聯絡管理員。");
+          toast("error", msg);
         }
         return;
       }
 
-      // 成功
+      // 成功：加到本地紀錄
       const r = data.record || {};
-      $("suc-name").textContent  = r.actorName || (state.actor && state.actor.name) || "您";
-      $("suc-type").textContent  = typeLabel(r.punchType || state.selected);
-      $("suc-type2").textContent = typeLabel(r.punchType || state.selected);
-      $("suc-time").textContent  = r.timeHHMM || taipeiNowHHMM();
-      showState("success");
+      state.records.push({
+        type: r.punchType || type,
+        time: r.timeHHMM ? r.timeHHMM + ":00" : taipeiHHMMSS(),
+      });
+      state.countToday += 1;
+      renderRecords();
 
-      // 嘗試在 3 秒後自動關閉 LIFF
-      setTimeout(() => {
-        try { if (liff && liff.closeWindow) liff.closeWindow(); } catch (_) {}
-      }, 2800);
+      $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次`;
+
+      // 清備註
+      $("noteInput").value = "";
+
+      toast("success", `${typeLabel(type)}打卡成功  ${r.timeHHMM || ""}`);
+
+      // 打完「下班」後 2.5s 自動關閉 LIFF
+      if (type === "out") {
+        setTimeout(() => {
+          try { if (liff && liff.closeWindow) liff.closeWindow(); } catch (_) {}
+        }, 2500);
+      }
     } catch (e) {
-      console.error("[submitPunch] 失敗：", e);
-      showError("連線失敗", "送出時發生錯誤，請檢查網路後再試。", e && e.message ? e.message : "");
+      console.error("[submitPunch] fail:", e);
+      toast("error", "連線失敗，請檢查網路");
     } finally {
+      btn.classList.remove("loading");
+      setButtonsEnabled(true);
       state.submitting = false;
-      $("btn-submit").disabled = !state.selected;
-      $("btn-submit").innerHTML = '送出打卡<span class="arrow">→</span>';
     }
-  });
+  }
 
-  // ==========================================================
-  // 開跑
-  // ==========================================================
-  boot();
+  // 綁定 click
+  document.addEventListener("DOMContentLoaded", () => {
+    ["in", "out", "extra"].forEach(t => {
+      $("btn-" + t).addEventListener("click", () => doPunch(t));
+    });
+    boot();
+  });
 </script>
 
 </body>
