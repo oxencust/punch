@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -8,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="衡點打卡站">
-<title>衡點健康  打卡系統</title>
+<title>衡點健康  打卡站點</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,12 +60,13 @@
   .header-left { display: flex; align-items: center; gap: 14px; }
   .header-logo {
     width: 44px; height: 44px;
-    background: var(--primary);
+    background: white;
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: var(--shadow);
+    padding: 5px;
   }
-  .header-logo svg { width: 22px; height: 22px; color: white; }
+  .header-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .header-title {
     font-weight: 600;
     font-size: 18px;
@@ -349,13 +349,11 @@
   <div class="header-content">
     <div class="header-left">
       <div class="header-logo">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
+        <img src="https://ik.imagekit.io/hanhealth/assets/logo.png?updatedAt=1772155101138" alt="衡點健康">
       </div>
       <div>
         <h1 class="header-title">衡點 打卡站</h1>
-        <p class="header-subtitle">Balance Point  /  Punch Station 01</p>
+        <p class="header-subtitle">Hendia  /  Punch Station 01</p>
       </div>
     </div>
     <div id="status" class="status">
