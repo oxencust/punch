@@ -1,1 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#faece8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="衡點 打卡">
+<title>衡點健康  打卡 QR</title>
 
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --bg:         #faece8;
+    --surface:    #ffffff;
+    --text:       #58595b;
+    --text-mute:  #b3b3b3;
+    --asterisk:   #b16056;
+    --line:       #b3b3b3;
+    --mint:       #93c6c5;
+    --mint-deep:  #7ab3b2;
+    --terracotta: #b16056;
+    --hover-soft: #faece8;
+    --radius: 4px;
+    --radius-lg: 12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 40px;
+  }
+
+  /* ========== TOPBAR ========== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+  }
+  .topbar .brand { display: flex; align-items: center; }
+  .topbar .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--mint);
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  .topbar .status.live .dot {
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  .topbar .status.err .dot {
+    background: var(--terracotta);
+    animation: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ========== HERO ========== */
+  .hero-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    gap: 24px;
+  }
+  .hero-left .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 10px;
+  }
+  .hero-left h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: clamp(42px, 5.4vw, 68px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--text);
+  }
+  .hero-left h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--mint);
+  }
+
+  .hero-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .clock {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .date {
+    font-family: "JetBrains Mono", monospace;
+    font-size: clamp(11px, 1.2vw, 14px);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    margin-top: 6px;
+  }
+
+  /* ========== MAIN QR ========== */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 32px;
+    min-height: 0;
+  }
+
+  .qr-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 34px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .qr-card::before {
+    content: "";
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 200px; height: 200px;
+    background: var(--mint);
+    opacity: 0.07;
+    border-radius: 50%;
+  }
+  .qr-card::after {
+    content: "";
+    position: absolute;
+    left: -40px; bottom: -40px;
+    width: 140px; height: 140px;
+    background: var(--terracotta);
+    opacity: 0.04;
+    border-radius: 50%;
+  }
+  .qr-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .qr-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 14px;
+  }
+  .qr-title {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 30px);
+    letter-spacing: -0.01em;
+    margin-bottom: 22px;
+    color: var(--text);
+  }
+  #qr-box {
+    width: clamp(260px, 36vh, 440px);
+    height: clamp(260px, 36vh, 440px);
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #qr-box > canvas,
+  #qr-box > img {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+  }
+  .qr-hint {
+    margin-top: 22px;
+    font-size: 13.5px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    max-width: 32ch;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .qr-hint .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--terracotta);
+    letter-spacing: 0.2em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* ========== RIGHT PANEL ========== */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    position: relative;
+  }
+  .panel h3 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+    color: var(--text);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .panel h3 .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--terracotta);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .panel ol, .panel ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    text-wrap: pretty;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .panel li { margin-bottom: 6px; }
+  .panel li strong { color: var(--terracotta); }
+
+  .kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 14px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .kv dt {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    align-self: center;
+  }
+  .kv dd {
+    margin: 0;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+  }
+  .kv dd.token {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .footnote {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .footnote span { color: var(--terracotta); }
+
+  /* ========== ERROR ========== */
+  .err-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    text-align: center;
+  }
+  .err-overlay.show { display: flex; }
+  .err-overlay .msg {
+    max-width: 80%;
+  }
+  .err-overlay h4 {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--terracotta);
+    margin: 0 0 10px;
+  }
+  .err-overlay p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    margin: 0;
+  }
+
+  /* ========== RESPONSIVE / PORTRAIT ========== */
+  @media (max-aspect-ratio: 4/5), (max-width: 760px) {
+    body { padding: 22px 22px 28px; }
+    main {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .hero-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .hero-right { text-align: left; }
+    .clock { font-size: clamp(40px, 14vw, 72px); }
+    #qr-box { width: min(84vw, 420px); height: min(84vw, 420px); }
+  }
+
+  /* 關閉 iPad Safari 橫桿灰色選取 */
+  ::selection { background: var(--mint); color: white; }
+</style>
+</head>
+
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <span class="brand"><span class="dot"></span>衡點健康  Balance Point</span>
+  <span id="status" class="status live"><span class="dot"></span><span id="status-text">CONNECTING</span></span>
+</div>
+
+<!-- Hero -->
+<div class="hero-row">
+  <div class="hero-left">
+    <div class="eyebrow">Station / 001  Punch Clock</div>
+    <h1>打卡 <em>站點</em></h1>
+  </div>
+  <div class="hero-right">
+    <div id="clock" class="clock">--:--</div>
+    <div id="date" class="date">----/--/-- ---</div>
+  </div>
+</div>
+
+<!-- Main -->
+<main>
+
+  <!-- QR -->
+  <div class="qr-card">
+    <div class="qr-inner">
+      <div class="qr-label">Scan to punch</div>
+      <div class="qr-title">請以 LINE 掃描此 QR Code</div>
+      <div id="qr-box"></div>
+      <div class="qr-hint">
+        <span class="num">How-To</span>
+        打開 LINE  <strong>掃描此 QR</strong>  系統將自動辨識身份並完成打卡
+      </div>
+    </div>
+    <div id="err-overlay" class="err-overlay">
+      <div class="msg">
+        <h4 id="err-title">連線中…</h4>
+        <p id="err-body">正在取得今日打卡 token</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side panel -->
+  <aside class="side">
+
+    <div class="panel">
+      <h3><span class="num">01</span>使用流程</h3>
+      <ol>
+        <li>打開 LINE，點右上角掃描鈕</li>
+        <li>對準 QR Code 掃描</li>
+        <li>系統會自動帶入您的身份與今日打卡狀況</li>
+        <li>確認後按「送出」即完成</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <h3><span class="num">02</span>注意事項</h3>
+      <ul>
+        <li>QR Code 每日 <strong>00:00 自動更換</strong>，截圖無效</li>
+        <li>僅限 <strong>員工本人 LINE</strong> 掃描打卡</li>
+        <li>上下班、加班由系統自動判斷，有疑義可手動調整</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3><span class="num">03</span>今日資訊</h3>
+      <dl class="kv">
+        <dt>Token Date</dt><dd id="info-date">—</dd>
+        <dt>Token</dt>     <dd id="info-token" class="token">—</dd>
+        <dt>Refresh</dt>   <dd id="info-refresh">—</dd>
+      </dl>
+    </div>
+
+    <div class="footnote">
+      <span>衡點健康</span>  /  打卡站點  Station 01
+    </div>
+
+  </aside>
+
+</main>
+
+<script>
+  // ==========================================================
+  // 設定
+  // ==========================================================
+  const SUPABASE_URL = "https://mnjilhpztnowaplggvkk.supabase.co";
+  const API_URL      = SUPABASE_URL + "/functions/v1/attendance-api";
+  const LIFF_ID      = "2007947083-EsrS7ZrM";
+  const LIFF_BASE    = "https://liff.line.me/" + LIFF_ID;
+
+  const POLL_INTERVAL_MS   = 60 * 1000;   // 每 60 秒輪詢 token
+  const CLOCK_INTERVAL_MS  = 1000;        // 每秒更新時鐘
+
+  // ==========================================================
+  // 台北時間工具
+  // ==========================================================
+  function taipeiNowParts() {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+      weekday: "short",
+    });
+    const parts = {};
+    fmt.formatToParts(new Date()).forEach(p => { parts[p.type] = p.value; });
+    return parts;
+  }
+
+  function updateClock() {
+    const p = taipeiNowParts();
+    document.getElementById("clock").textContent = `${p.hour}:${p.minute}`;
+    const weekdayMap = {
+      Mon:"MON", Tue:"TUE", Wed:"WED", Thu:"THU",
+      Fri:"FRI", Sat:"SAT", Sun:"SUN",
+    };
+    document.getElementById("date").textContent =
+      `${p.year}/${p.month}/${p.day}  ${weekdayMap[p.weekday] || p.weekday}`;
+  }
+
+  // ==========================================================
+  // 狀態顯示
+  // ==========================================================
+  function setStatus(mode, text) {
+    const el = document.getElementById("status");
+    const txt = document.getElementById("status-text");
+    el.classList.remove("live", "err");
+    el.classList.add(mode === "err" ? "err" : "live");
+    txt.textContent = text;
+  }
+
+  function showError(title, body) {
+    document.getElementById("err-title").textContent = title;
+    document.getElementById("err-body").textContent  = body;
+    document.getElementById("err-overlay").classList.add("show");
+  }
+  function hideError() {
+    document.getElementById("err-overlay").classList.remove("show");
+  }
+
+  // ==========================================================
+  // QR 繪製
+  // ==========================================================
+  let qrInstance = null;
+  let lastToken  = null;
+
+  function drawQR(token) {
+    const url = `${LIFF_BASE}?t=${encodeURIComponent(token)}`;
+    const box = document.getElementById("qr-box");
+    box.innerHTML = "";
+    qrInstance = new QRCode(box, {
+      text: url,
+      width:  800,   // 高解析度，適合 iPad Retina 縮放
+      height: 800,
+      colorDark:  "#58595b",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+    lastToken = token;
+  }
+
+  // ==========================================================
+  // 取 token
+  // ==========================================================
+  async function fetchToken() {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "getTodayPunchToken" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.success || !data.token) {
+        throw new Error(data && data.error ? data.error : `HTTP ${res.status}`);
+      }
+
+      // 若 token 有變更才重畫
+      if (data.token !== lastToken) {
+        drawQR(data.token);
+      }
+
+      document.getElementById("info-date").textContent   = data.tokenDate || "—";
+      document.getElementById("info-token").textContent  =
+        (data.token || "").slice(0, 8) + "…" + (data.token || "").slice(-4);
+      document.getElementById("info-refresh").textContent =
+        new Intl.DateTimeFormat("zh-TW", {
+          timeZone: "Asia/Taipei",
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+          hour12: false,
+        }).format(new Date());
+
+      hideError();
+      setStatus("live", "LIVE");
+    } catch (e) {
+      console.error("[punch-qr] fetchToken 失敗：", e);
+      setStatus("err", "OFFLINE");
+      showError("連線失敗", "無法取得今日打卡 token，系統將持續重試。請檢查網路或稍候再試。");
+    }
+  }
+
+  // ==========================================================
+  // 啟動
+  // ==========================================================
+  updateClock();
+  setInterval(updateClock, CLOCK_INTERVAL_MS);
+
+  fetchToken();
+  setInterval(fetchToken, POLL_INTERVAL_MS);
+
+  // 防止 iPad 自動熄屏（盡力而為；實際建議在 iPad「設定 → 螢幕顯示與亮度 → 自動鎖定」設為「永不」）
+  // 若需 WakeLock API，可在 user gesture 後啟動（此頁為被動顯示，不另加按鈕）
+</script>
+
+</body>
+</html>
