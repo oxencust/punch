@@ -1,1 +1,573 @@
 
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#e8f5ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="衡點打卡站">
+<title>衡點健康  打卡系統</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --primary:        #5a9a7a;
+    --primary-light:  #8ec5a7;
+    --primary-bg:     #e8f5ee;
+    --background:     linear-gradient(180deg, #e8f5ee 0%, #d4ebe0 100%);
+    --card:           #ffffff;
+    --text:           #2d3748;
+    --text-muted:     #718096;
+    --text-light:     #a0aec0;
+    --border:         #e2e8f0;
+    --shadow:         0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-lg:      0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-xl:      0 10px 40px rgba(0, 0, 0, 0.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ========== Header ========== */
+  .header {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .header-content {
+    max-width: 1280px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 44px; height: 44px;
+    background: var(--primary);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+  }
+  .header-logo svg { width: 22px; height: 22px; color: white; }
+  .header-title {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    background: white;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    box-shadow: var(--shadow);
+  }
+  .status .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: dotPulse 1.8s ease-in-out infinite;
+  }
+  .status.offline .dot { background: #ef4444; animation: none; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ========== Main ========== */
+  main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 28px;
+    padding: 28px 32px;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ========== QR Card ========== */
+  .qr-card {
+    background: white;
+    border-radius: 24px;
+    box-shadow: var(--shadow-xl);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .qr-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
+    background: var(--primary-light);
+    opacity: 0.12;
+    border-radius: 50%;
+  }
+  .qr-card::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 140px; height: 140px;
+    background: var(--primary);
+    opacity: 0.06;
+    border-radius: 50%;
+  }
+
+  .qr-eyebrow {
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: var(--primary-bg);
+    color: var(--primary);
+    border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .qr-eyebrow svg { width: 16px; height: 16px; }
+
+  .qr-title {
+    position: relative; z-index: 1;
+    font-size: clamp(22px, 2.4vw, 32px);
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  #qr-box {
+    position: relative; z-index: 1;
+    width:  clamp(280px, 40vh, 480px);
+    height: clamp(280px, 40vh, 480px);
+    padding: 20px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+  }
+  #qr-box > canvas,
+  #qr-box > img {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+  }
+
+  .qr-hint {
+    position: relative; z-index: 1;
+    margin-top: 22px;
+    font-size: 15px;
+    color: var(--text);
+    text-align: center;
+    max-width: 36ch;
+    line-height: 1.65;
+  }
+  .qr-hint strong { color: var(--primary); font-weight: 600; }
+
+  /* ========== Error Overlay ========== */
+  .err-overlay {
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.94);
+    display: none;
+    align-items: center; justify-content: center;
+    text-align: center;
+    border-radius: 24px;
+    padding: 24px;
+    z-index: 5;
+  }
+  .err-overlay.show { display: flex; }
+  .err-overlay .inner { max-width: 320px; }
+  .err-overlay .ei {
+    width: 56px; height: 56px;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .err-overlay .ei svg { width: 28px; height: 28px; color: #ef4444; }
+  .err-overlay h4 {
+    font-size: 20px; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .err-overlay p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ========== Side panel ========== */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .side::-webkit-scrollbar { width: 6px; }
+  .side::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+
+  .time-card {
+    background: white;
+    border-radius: 20px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .time-display {
+    display: flex; align-items: baseline; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .time-digit {
+    font-size: clamp(48px, 6vw, 68px);
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .time-sep {
+    font-size: clamp(48px, 6vw, 68px);
+    font-weight: 300;
+    color: var(--text-light);
+    line-height: 1;
+    margin: 0 4px;
+  }
+  .date-row {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: var(--primary-bg);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .date-row svg { width: 15px; height: 15px; }
+
+  .panel {
+    background: white;
+    border-radius: 20px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .panel-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title .num {
+    width: 22px; height: 22px;
+    background: var(--primary-bg);
+    color: var(--primary);
+    border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .panel ol, .panel ul {
+    padding-left: 20px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .panel li { margin-bottom: 4px; }
+  .panel li strong { color: var(--primary); font-weight: 600; }
+
+  .kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    font-size: 12px;
+  }
+  .kv dt {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .kv dd {
+    margin: 0;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 11.5px;
+  }
+
+  /* ========== Responsive ========== */
+  @media (max-aspect-ratio: 4/5), (max-width: 820px) {
+    main {
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 20px;
+    }
+    .qr-card { padding: 24px; }
+    .side { overflow-y: visible; }
+  }
+  @media (max-width: 480px) {
+    #qr-box { width: min(86vw, 420px); height: min(86vw, 420px); }
+    .header-title { font-size: 16px; }
+    .header-subtitle { display: none; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <div class="header-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="header-title">衡點 打卡站</h1>
+        <p class="header-subtitle">Balance Point  /  Punch Station 01</p>
+      </div>
+    </div>
+    <div id="status" class="status">
+      <span class="dot"></span>
+      <span id="status-text">連線中</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main>
+
+  <!-- QR Card -->
+  <div class="qr-card">
+    <div class="qr-eyebrow">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m0 0V8m0 4v4m0-4h4m6 8h.01M4 20h4v-4H4v4z" />
+      </svg>
+      Scan to Punch
+    </div>
+    <h2 class="qr-title">請以 LINE 掃描打卡</h2>
+
+    <div id="qr-box"></div>
+
+    <p class="qr-hint">
+      開啟 LINE 右上角掃描鈕，對準此 QR Code<br>
+      系統會自動辨識您的 <strong>員工身份</strong> 並完成打卡
+    </p>
+
+    <div id="err-overlay" class="err-overlay">
+      <div class="inner">
+        <div class="ei">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h4 id="err-title">連線中…</h4>
+        <p  id="err-body">正在取得今日打卡 token</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side -->
+  <aside class="side">
+
+    <!-- Time -->
+    <div class="time-card">
+      <div class="time-display">
+        <span id="tH" class="time-digit">--</span>
+        <span class="time-sep">:</span>
+        <span id="tM" class="time-digit">--</span>
+        <span class="time-sep">:</span>
+        <span id="tS" class="time-digit">--</span>
+      </div>
+      <div class="date-row">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span id="dateText">—</span>
+      </div>
+    </div>
+
+    <!-- How to -->
+    <div class="panel">
+      <div class="panel-title"><span class="num">01</span>使用流程</div>
+      <ol>
+        <li>打開 LINE，點右上角掃描</li>
+        <li>對準左側 QR Code</li>
+        <li>系統自動帶入您的身份</li>
+        <li>確認後按打卡即完成</li>
+      </ol>
+    </div>
+
+    <!-- Notes -->
+    <div class="panel">
+      <div class="panel-title"><span class="num">02</span>注意事項</div>
+      <ul>
+        <li>QR Code 每日 <strong>00:00 自動更換</strong>，截圖無效</li>
+        <li>僅限 <strong>員工本人 LINE</strong> 掃描打卡</li>
+        <li>上下班、加班由系統<strong>自動判斷</strong>，可手動調整</li>
+      </ul>
+    </div>
+
+    <!-- Info -->
+    <div class="panel">
+      <div class="panel-title"><span class="num">03</span>今日站點資訊</div>
+      <dl class="kv">
+        <dt>Token Date</dt><dd id="info-date">—</dd>
+        <dt>Token</dt>     <dd id="info-token">—</dd>
+        <dt>Refresh</dt>   <dd id="info-refresh">—</dd>
+      </dl>
+    </div>
+
+  </aside>
+
+</main>
+
+<script>
+  // ==========================================================
+  // 設定
+  // ==========================================================
+  const SUPABASE_URL = "https://mnjilhpztnowaplggvkk.supabase.co";
+  const API_URL      = SUPABASE_URL + "/functions/v1/attendance-api";
+  const LIFF_ID      = "2007947083-EsrS7ZrM";
+  const LIFF_BASE    = "https://liff.line.me/" + LIFF_ID;
+
+  const POLL_INTERVAL_MS  = 60 * 1000;
+  const CLOCK_INTERVAL_MS = 1000;
+
+  // ==========================================================
+  // Taipei 時間
+  // ==========================================================
+  function taipeiParts() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false, weekday: "short",
+    }).formatToParts(new Date());
+    const o = {};
+    parts.forEach(p => o[p.type] = p.value);
+    return o;
+  }
+  function updateClock() {
+    const p = taipeiParts();
+    document.getElementById("tH").textContent = p.hour;
+    document.getElementById("tM").textContent = p.minute;
+    document.getElementById("tS").textContent = p.second;
+    const wk = { Mon:"一", Tue:"二", Wed:"三", Thu:"四", Fri:"五", Sat:"六", Sun:"日" };
+    document.getElementById("dateText").textContent =
+      `${p.year}年${parseInt(p.month,10)}月${parseInt(p.day,10)}日 星期${wk[p.weekday] || p.weekday}`;
+  }
+
+  // ==========================================================
+  // 狀態
+  // ==========================================================
+  function setStatus(online, text) {
+    const el = document.getElementById("status");
+    el.classList.toggle("offline", !online);
+    document.getElementById("status-text").textContent = text;
+  }
+  function showError(title, body) {
+    document.getElementById("err-title").textContent = title;
+    document.getElementById("err-body").textContent  = body;
+    document.getElementById("err-overlay").classList.add("show");
+  }
+  function hideError() {
+    document.getElementById("err-overlay").classList.remove("show");
+  }
+
+  // ==========================================================
+  // QR
+  // ==========================================================
+  let lastToken = null;
+  function drawQR(token) {
+    const url = `${LIFF_BASE}?t=${encodeURIComponent(token)}`;
+    const box = document.getElementById("qr-box");
+    box.innerHTML = "";
+    new QRCode(box, {
+      text: url,
+      width:  800,
+      height: 800,
+      colorDark:  "#2d3748",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+    lastToken = token;
+  }
+
+  // ==========================================================
+  // 抓 token
+  // ==========================================================
+  async function fetchToken() {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "getTodayPunchToken" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.success || !data.token) {
+        throw new Error((data && data.error) ? data.error : ("HTTP " + res.status));
+      }
+      if (data.token !== lastToken) drawQR(data.token);
+
+      document.getElementById("info-date").textContent    = data.tokenDate || "—";
+      document.getElementById("info-token").textContent   =
+        (data.token || "").slice(0, 8) + "…" + (data.token || "").slice(-4);
+      document.getElementById("info-refresh").textContent =
+        new Intl.DateTimeFormat("zh-TW", {
+          timeZone: "Asia/Taipei",
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+          hour12: false,
+        }).format(new Date());
+
+      hideError();
+      setStatus(true, "連線正常");
+    } catch (e) {
+      console.error("[punch-qr]", e);
+      setStatus(false, "連線失敗");
+      showError("連線失敗", "無法取得今日打卡 token，系統將持續重試。");
+    }
+  }
+
+  // ==========================================================
+  // Init
+  // ==========================================================
+  updateClock();
+  setInterval(updateClock, CLOCK_INTERVAL_MS);
+  fetchToken();
+  setInterval(fetchToken, POLL_INTERVAL_MS);
+</script>
+
+</body>
+</html>
