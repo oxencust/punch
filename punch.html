@@ -236,6 +236,34 @@
   .status-text { font-size: 14px; font-weight: 500; color: var(--text); }
   .status-detail { font-size: 12px; color: var(--text-muted); }
 
+  /* Pending banner (未綁定暫存打卡提示) */
+  .pending-banner {
+    width: 100%;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #78350f;
+    line-height: 1.55;
+  }
+  .pending-banner.show { display: flex; }
+  .pending-banner .pb-icon {
+    width: 20px; height: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pending-banner .pb-title {
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 2px;
+  }
+
   /* Clock buttons */
   .clock-buttons {
     display: flex; justify-content: center;
@@ -546,6 +574,17 @@
       </div>
     </section>
 
+    <!-- Pending banner（未建檔暫存打卡提示，僅 pending 狀態顯示） -->
+    <aside class="pending-banner fade-in delay-3" id="pendingBanner" role="status" aria-live="polite">
+      <svg class="pb-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0L3.19 16a2 2 0 001.74 3z" />
+      </svg>
+      <div>
+        <div class="pb-title">尚未建檔  打卡將暫存</div>
+        <div id="pendingBannerMsg">您尚未建檔，本次打卡將暫存為待綁定；建檔後會自動歸戶，14 天未歸戶會自動清除。</div>
+      </div>
+    </aside>
+
     <!-- Clock buttons -->
     <section class="clock-buttons fade-in delay-4">
 
@@ -623,6 +662,7 @@
   const state = {
     token:       null,
     lineUid:     null,
+    displayName: "",     // LIFF profile.displayName（pending 時送 API 辨識用）
     actor:       null,   // { id, name, role }
     suggested:   null,
     countToday:  0,
@@ -630,6 +670,8 @@
     timeHHMM:    "",
     submitting:  false,
     records:     [],     // 本次 session 成功打出的紀錄（optimistic）
+    pending:     false,  // true = 未綁定 staff，打卡以 pending 狀態存入
+    pendingInfo: null,   // { dailyLimit, remaining, retentionDays, message }
   };
 
   const $ = (id) => document.getElementById(id);
@@ -669,6 +711,18 @@
       el.style.opacity = "0";
       setTimeout(() => el.remove(), 320);
     }, ms || 2600);
+  }
+
+  // ==================== Pending Banner ====================
+  function showPendingBanner(msg) {
+    const el = $("pendingBanner");
+    if (!el) return;
+    if (msg) $("pendingBannerMsg").textContent = msg;
+    el.classList.add("show");
+  }
+  function hidePendingBanner() {
+    const el = $("pendingBanner");
+    if (el) el.classList.remove("show");
   }
 
   // ==================== 時鐘 ====================
@@ -758,7 +812,7 @@
           </svg>
         </div>
         <div class="attendance-item-content">
-          <p class="attendance-item-label">${typeLabel(r.type)}打卡</p>
+          <p class="attendance-item-label">${typeLabel(r.type)}打卡${r.pending ? ' <span style="font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;padding:1px 6px;border-radius:6px;margin-left:6px;">暫存</span>' : ''}</p>
           <p class="attendance-item-time">${r.time}</p>
         </div>
       </div>
@@ -792,7 +846,8 @@
         return;
       }
       const profile = await liff.getProfile();
-      state.lineUid = profile.userId;
+      state.lineUid     = profile.userId;
+      state.displayName = profile.displayName || "";
       if (profile.pictureUrl) {
         $("userAvatar").innerHTML = `<img src="${profile.pictureUrl}" alt="">`;
       }
@@ -812,7 +867,12 @@
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getPunchContext", token: state.token, lineUid: state.lineUid }),
+        body: JSON.stringify({
+          action:      "getPunchContext",
+          token:       state.token,
+          lineUid:     state.lineUid,
+          displayName: state.displayName,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!data) throw new Error("伺服器無回應 (HTTP " + res.status + ")");
@@ -838,20 +898,38 @@
       }
 
       // 綁定狀態
-      state.actor      = data.actor || null;
-      state.suggested  = data.suggestedPunchType || "in";
-      state.countToday = typeof data.countToday === "number" ? data.countToday : 0;
-      state.today      = data.today || "";
-      state.timeHHMM   = data.timeHHMM || "";
+      state.actor       = data.actor || null;
+      state.suggested   = data.suggestedPunchType || "in";
+      state.countToday  = typeof data.countToday === "number" ? data.countToday : 0;
+      state.today       = data.today || "";
+      state.timeHHMM    = data.timeHHMM || "";
+      state.pending     = !!data.pending;
+      state.pendingInfo = data.pendingInfo || null;
 
       // 右上 header
-      $("roleBadge").textContent = roleText(state.actor ? state.actor.role : "staff");
+      $("roleBadge").textContent = state.pending
+        ? "待綁定"
+        : roleText(state.actor ? state.actor.role : "staff");
       // 使用者區
-      $("userName").textContent  = state.actor ? state.actor.name : (await liff.getProfile()).displayName;
+      $("userName").textContent  = state.actor && state.actor.name
+        ? state.actor.name
+        : (state.displayName || "（LINE 使用者）");
       $("userId").textContent    = state.lineUid ? state.lineUid.slice(0, 10) + "…" : "—";
-      // 狀態卡
-      $("statusText").textContent   = "已驗證  可以打卡";
-      $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次  建議：${typeLabel(state.suggested)}`;
+
+      // 狀態卡 + pending 橫幅
+      if (state.pending) {
+        $("statusText").textContent   = "尚未建檔  暫存打卡";
+        const pInfo = state.pendingInfo || {};
+        const remain = typeof pInfo.remaining === "number" ? pInfo.remaining : 5;
+        $("statusDetail").textContent =
+          `今日暫存 ${state.countToday}/${pInfo.dailyLimit || 5} 次  建議：${typeLabel(state.suggested)}`;
+        showPendingBanner(pInfo.message ||
+          `您尚未建檔，本次打卡將暫存為待綁定（今日剩 ${remain} 次）。行政人員建檔後會自動歸戶，14 天未歸戶會自動清除。`);
+      } else {
+        $("statusText").textContent   = "已驗證  可以打卡";
+        $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次  建議：${typeLabel(state.suggested)}`;
+        hidePendingBanner();
+      }
 
       markSuggested(state.suggested);
       setButtonsEnabled(true);
@@ -883,6 +961,7 @@
           action:       "submitPunch",
           token:        state.token,
           lineUid:      state.lineUid,
+          displayName:  state.displayName,
           punchType:    type,
           autoDetected: autoDetected,
           note:         note,
@@ -896,6 +975,9 @@
         if (code === "INVALID_TOKEN") {
           toast("error", "QR 已過期，請重新掃描");
           setTimeout(() => showError("QR Code 已過期", msg, ["回到 iPad 重新掃描 QR"]), 1200);
+        } else if (code === "PENDING_LIMIT_EXCEEDED") {
+          toast("warning", msg);
+          setButtonsEnabled(false);
         } else if (code === "NOT_AUTHORIZED") {
           toast("error", "身份未綁定");
         } else {
@@ -905,20 +987,37 @@
       }
 
       // 成功：加到本地紀錄
-      const r = data.record || {};
+      const r      = data.record || {};
+      const isPend = !!data.pending;
       state.records.push({
-        type: r.punchType || type,
-        time: r.timeHHMM ? r.timeHHMM + ":00" : taipeiHHMMSS(),
+        type:    r.punchType || type,
+        time:    r.timeHHMM ? r.timeHHMM + ":00" : taipeiHHMMSS(),
+        pending: isPend,
       });
       state.countToday += 1;
       renderRecords();
 
-      $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次`;
+      if (isPend) {
+        const pInfo = state.pendingInfo || {};
+        const limit = pInfo.dailyLimit || 5;
+        const remain = Math.max(0, limit - state.countToday);
+        $("statusDetail").textContent =
+          `今日暫存 ${state.countToday}/${limit} 次（剩 ${remain}）`;
+      } else {
+        $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次`;
+      }
 
       // 清備註
       $("noteInput").value = "";
 
-      toast("success", `${typeLabel(type)}打卡成功  ${r.timeHHMM || ""}`);
+      if (isPend) {
+        toast("success",
+          data.pendingMessage ||
+          `${typeLabel(type)}打卡已暫存  ${r.timeHHMM || ""}`
+        );
+      } else {
+        toast("success", `${typeLabel(type)}打卡成功  ${r.timeHHMM || ""}`);
+      }
 
       // 打完「下班」後 2.5s 自動關閉 LIFF
       if (type === "out") {
