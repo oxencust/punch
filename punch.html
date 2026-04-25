@@ -20,6 +20,10 @@
     --clock-out-hover:  #dba396;
     --extra:            #d4b896;
     --extra-hover:      #c7a886;
+    --overtime-in:       #c4a980;
+    --overtime-in-hover: #b59a72;
+    --overtime-out:      #a88b63;
+    --overtime-out-hover: #97794f;
     --background:       linear-gradient(180deg, #e8f5ee 0%, #d4ebe0 100%);
     --card:             #ffffff;
     --text:             #2d3748;
@@ -294,11 +298,17 @@
   .clock-btn.clock-out:not(:disabled):hover   { background: var(--clock-out-hover); }
   .clock-btn.clock-extra { background: var(--extra); }
   .clock-btn.clock-extra:not(:disabled):hover { background: var(--extra-hover); }
+  .clock-btn.clock-overtime-in { background: var(--overtime-in); }
+  .clock-btn.clock-overtime-in:not(:disabled):hover { background: var(--overtime-in-hover); }
+  .clock-btn.clock-overtime-out { background: var(--overtime-out); }
+  .clock-btn.clock-overtime-out:not(:disabled):hover { background: var(--overtime-out-hover); }
   .clock-btn svg { width: 36px; height: 36px; color: white; }
   .clock-btn-label { font-size: 14px; font-weight: 500; color: var(--text); }
   .clock-btn-label.clock-in    { color: var(--primary); }
   .clock-btn-label.clock-out   { color: #c97a6d; }
   .clock-btn-label.clock-extra { color: #a68558; }
+  .clock-btn-label.clock-overtime-in  { color: #8b6f3e; }
+  .clock-btn-label.clock-overtime-out { color: #6e5530; }
 
   /* Suggestion ring */
   .clock-btn-wrapper.suggested .clock-btn::before {
@@ -401,10 +411,14 @@
   .attendance-item-icon.in    { background: rgba(142, 197, 167, 0.2); }
   .attendance-item-icon.out   { background: rgba(232, 180, 168, 0.2); }
   .attendance-item-icon.extra { background: rgba(212, 184, 150, 0.2); }
+  .attendance-item-icon.overtime_in  { background: rgba(196, 169, 128, 0.22); }
+  .attendance-item-icon.overtime_out { background: rgba(168, 139, 99, 0.22); }
   .attendance-item-icon svg { width: 18px; height: 18px; }
   .attendance-item-icon.in    svg { color: var(--primary); }
   .attendance-item-icon.out   svg { color: #c97a6d; }
   .attendance-item-icon.extra svg { color: #a68558; }
+  .attendance-item-icon.overtime_in  svg { color: #8b6f3e; }
+  .attendance-item-icon.overtime_out svg { color: #6e5530; }
   .attendance-item-content { flex: 1; }
   .attendance-item-label { font-size: 12px; color: var(--text-muted); }
   .attendance-item-time {
@@ -610,14 +624,25 @@
         <span class="suggest-badge">建議</span>
       </div>
 
-      <div class="clock-btn-wrapper" id="wrap-extra">
-        <button class="clock-btn clock-extra" id="btn-extra" data-type="extra" disabled>
+      <div class="clock-btn-wrapper" id="wrap-overtime_in">
+        <button class="clock-btn clock-overtime-in" id="btn-overtime_in" data-type="overtime_in" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
           </svg>
           <div class="btn-spinner"></div>
         </button>
-        <span class="clock-btn-label clock-extra">加班</span>
+        <span class="clock-btn-label clock-overtime-in">加班上班</span>
+        <span class="suggest-badge">建議</span>
+      </div>
+
+      <div class="clock-btn-wrapper" id="wrap-overtime_out">
+        <button class="clock-btn clock-overtime-out" id="btn-overtime_out" data-type="overtime_out" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <div class="btn-spinner"></div>
+        </button>
+        <span class="clock-btn-label clock-overtime-out">加班下班</span>
         <span class="suggest-badge">建議</span>
       </div>
 
@@ -773,19 +798,31 @@
   function roleText(role) {
     return role === "coach" ? "教練 Coach" : "員工 Staff";
   }
+  // 所有 UI 上的打卡型別（不含 legacy 'extra'，extra 只在顯示舊紀錄時用）
+  const UI_TYPES = ["in", "out", "overtime_in", "overtime_out"];
+
   function typeLabel(type) {
-    return { in:"上班", out:"下班", extra:"加班" }[type] || type;
+    return {
+      in:"上班",
+      out:"下班",
+      overtime_in:"加班上班",
+      overtime_out:"加班下班",
+      extra:"加班（舊）"
+    }[type] || type;
   }
 
   function markSuggested(type) {
-    ["in", "out", "extra"].forEach(t => {
-      $("wrap-" + t).classList.toggle("suggested", t === type);
+    // 若系統建議 'extra'（3rd+ punch of day），沒有對應按鈕 → 不標任何按鈕
+    UI_TYPES.forEach(t => {
+      const el = $("wrap-" + t);
+      if (el) el.classList.toggle("suggested", t === type);
     });
   }
 
   function setButtonsEnabled(enabled) {
-    ["in", "out", "extra"].forEach(t => {
-      $("btn-" + t).disabled = !enabled;
+    UI_TYPES.forEach(t => {
+      const el = $("btn-" + t);
+      if (el) el.disabled = !enabled;
     });
   }
 
@@ -801,6 +838,8 @@
     const iconPath = {
       in:    `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />`,
       out:   `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />`,
+      overtime_in:  `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />`,
+      overtime_out: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />`,
       extra: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />`,
     };
 
@@ -917,17 +956,21 @@
       $("userId").textContent    = state.lineUid ? state.lineUid.slice(0, 10) + "…" : "—";
 
       // 狀態卡 + pending 橫幅
+      // 若建議為 'extra'（正規上下班都打過了），不顯示建議，請使用者手動選加班
+      const suggestText = UI_TYPES.includes(state.suggested)
+        ? `建議：${typeLabel(state.suggested)}`
+        : "正規上下班已打完，加班請手動選擇";
       if (state.pending) {
         $("statusText").textContent   = "尚未建檔  暫存打卡";
         const pInfo = state.pendingInfo || {};
         const remain = typeof pInfo.remaining === "number" ? pInfo.remaining : 5;
         $("statusDetail").textContent =
-          `今日暫存 ${state.countToday}/${pInfo.dailyLimit || 5} 次  建議：${typeLabel(state.suggested)}`;
+          `今日暫存 ${state.countToday}/${pInfo.dailyLimit || 5} 次  ${suggestText}`;
         showPendingBanner(pInfo.message ||
           `您尚未建檔，本次打卡將暫存為待綁定（今日剩 ${remain} 次）。行政人員建檔後會自動歸戶，14 天未歸戶會自動清除。`);
       } else {
         $("statusText").textContent   = "已驗證  可以打卡";
-        $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次  建議：${typeLabel(state.suggested)}`;
+        $("statusDetail").textContent = `今日已打卡 ${state.countToday} 次  ${suggestText}`;
         hidePendingBanner();
       }
 
@@ -1019,8 +1062,8 @@
         toast("success", `${typeLabel(type)}打卡成功  ${r.timeHHMM || ""}`);
       }
 
-      // 打完「下班」後 2.5s 自動關閉 LIFF
-      if (type === "out") {
+      // 打完「下班 / 加班下班」後 2.5s 自動關閉 LIFF
+      if (type === "out" || type === "overtime_out") {
         setTimeout(() => {
           try { if (liff && liff.closeWindow) liff.closeWindow(); } catch (_) {}
         }, 2500);
