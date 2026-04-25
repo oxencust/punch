@@ -1080,8 +1080,9 @@
 
   // 綁定 click
   document.addEventListener("DOMContentLoaded", () => {
-    ["in", "out", "extra"].forEach(t => {
-      $("btn-" + t).addEventListener("click", () => doPunch(t));
+    ["in", "out", "overtime_in", "overtime_out"].forEach(t => {
+      const el = $("btn-" + t);
+      if (el) el.addEventListener("click", () => doPunch(t));
     });
     boot();
   });
