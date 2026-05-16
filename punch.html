@@ -487,6 +487,104 @@
     .clock-btn { width: 88px; height: 88px; }
     .clock-btn svg, .clock-btn .btn-spinner { width: 32px; height: 32px; }
   }
+
+  /* ========== Correction Request (補打卡申請) ========== */
+  .corr-request-section {
+    width: 100%;
+    text-align: center;
+    margin-top: -8px;
+  }
+  .corr-request-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .corr-request-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(90, 154, 122, 0.05);
+  }
+  .cmodal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+  }
+  .cmodal-overlay.show { display: flex; }
+  .cmodal-box {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    padding: 22px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .cmodal-title {
+    font-size: 18px; font-weight: 600;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .cmodal-sub {
+    font-size: 12px; color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .cmodal-field { margin-bottom: 14px; }
+  .cmodal-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .cmodal-field input,
+  .cmodal-field select,
+  .cmodal-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .cmodal-field input:focus,
+  .cmodal-field select:focus,
+  .cmodal-field textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .cmodal-field textarea { min-height: 72px; resize: vertical; }
+  .cmodal-hint {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+  .cmodal-actions {
+    display: flex; gap: 10px;
+    margin-top: 18px;
+  }
+  .cmodal-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .cmodal-btn.secondary { background: #f1f5f9; color: var(--text); }
+  .cmodal-btn.primary   { background: var(--primary); color: #fff; }
+  .cmodal-btn:disabled  { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -668,10 +766,49 @@
       </div>
     </section>
 
+    <!-- 申請補打卡入口（已綁定 staff 才顯示） -->
+    <section class="corr-request-section fade-in delay-5" id="corrRequestSection" style="display:none;">
+      <button type="button" class="corr-request-btn" id="corrRequestBtn">
+        📝 需要補打卡？點此申請
+      </button>
+    </section>
+
   </main>
 
   <footer class="footer">衡點健康 Hendia  /  Punch Clock v1.0</footer>
 
+</div>
+
+<!-- 申請補打卡 modal -->
+<div class="cmodal-overlay" id="reqCorrectionModal">
+  <div class="cmodal-box">
+    <div class="cmodal-title">📝 申請補打卡</div>
+    <div class="cmodal-sub" id="reqCorrSub">—</div>
+    <div class="cmodal-field">
+      <label>打卡類型</label>
+      <select id="reqCorrType">
+        <option value="in">上班 (in)</option>
+        <option value="out">下班 (out)</option>
+      </select>
+    </div>
+    <div class="cmodal-field">
+      <label>補哪一天</label>
+      <input type="date" id="reqCorrDate">
+      <div class="cmodal-hint" id="reqCorrDateHint">可補日期：—</div>
+    </div>
+    <div class="cmodal-field">
+      <label>時間（HH:MM，台北時間）</label>
+      <input type="time" id="reqCorrTime">
+    </div>
+    <div class="cmodal-field">
+      <label>原因（必填）</label>
+      <textarea id="reqCorrReason" maxlength="200" placeholder="例：忘記打卡 / 系統故障 / 出差未帶 LINE 設備"></textarea>
+    </div>
+    <div class="cmodal-actions">
+      <button class="cmodal-btn secondary" type="button" id="reqCorrCancel">取消</button>
+      <button class="cmodal-btn primary" type="button" id="reqCorrSubmit">送出申請</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -683,6 +820,10 @@
   const SUPABASE_URL = "https://mnjilhpztnowaplggvkk.supabase.co";
   // 2026-05-14 Wave5/Step8 cutover Edge → Zeabur (rollback：改回 SUPABASE_URL + "/functions/v1/attendance-api")
   const API_URL      = "https://attendance-hendia.zeabur.app/";
+  // 2026-05-17 P3：補打卡申請 — 走 admin-service
+  const ADMIN_API_URL = "https://admin-hendia.zeabur.app/";
+  const ADMIN_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uamlsaHB6dG5vd2FwbGdndmtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDA0ODYsImV4cCI6MjA4MTI3NjQ4Nn0.X3e9DF3iT2KUR9ma3_Ins01vG607R155v0xia8hO_Qg";
+  const CORRECTION_WINDOW_DAYS = 60;
 
   // ==================== 全域狀態 ====================
   const state = {
@@ -978,6 +1119,13 @@
       markSuggested(state.suggested);
       setButtonsEnabled(true);
 
+      // 已綁定 staff 才開放「申請補打卡」入口（pending 狀態不顯示）
+      const corrSection = $("corrRequestSection");
+      if (corrSection) {
+        const canRequest = !!(state.actor && state.actor.id && !state.pending);
+        corrSection.style.display = canRequest ? "block" : "none";
+      }
+
       showApp();
     } catch (e) {
       console.error("[getPunchContext] fail:", e);
@@ -1079,12 +1227,160 @@
     }
   }
 
+  // ==================== 申請補打卡（admin-service / requestPunchCorrection） ====================
+  function corrTodayTw() {
+    const p = taipeiNow();
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+  function corrMinDateTw() {
+    // today - CORRECTION_WINDOW_DAYS days，以台北日期為基準
+    const p = taipeiNow();
+    const base = new Date(Date.UTC(+p.year, +p.month - 1, +p.day, 12, 0, 0));
+    base.setUTCDate(base.getUTCDate() - CORRECTION_WINDOW_DAYS);
+    const y  = base.getUTCFullYear();
+    const m  = String(base.getUTCMonth() + 1).padStart(2, "0");
+    const d  = String(base.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function openReqCorrectionModal() {
+    if (!state.actor || !state.actor.id) {
+      toast("error", "請先完成身份驗證");
+      return;
+    }
+    const today = corrTodayTw();
+    const minD  = corrMinDateTw();
+    $("reqCorrSub").textContent =
+      `申請人：${(state.actor && state.actor.name) || state.displayName || "—"}（${state.actor.id}）`;
+    $("reqCorrType").value = "in";
+    const dateEl = $("reqCorrDate");
+    dateEl.min = minD;
+    dateEl.max = today;
+    dateEl.value = today;
+    $("reqCorrTime").value = "";
+    $("reqCorrReason").value = "";
+    $("reqCorrDateHint").textContent = `可補日期：${minD} ~ ${today}（最多 ${CORRECTION_WINDOW_DAYS} 天，不能補未來）`;
+    $("reqCorrectionModal").classList.add("show");
+    setTimeout(() => { try { $("reqCorrTime").focus(); } catch (_) {} }, 60);
+  }
+  function closeReqCorrectionModal() {
+    $("reqCorrectionModal").classList.remove("show");
+  }
+
+  async function callAdminAction(payload) {
+    let idToken = null;
+    try {
+      if (typeof liff !== "undefined" && liff.isLoggedIn && liff.isLoggedIn()) {
+        idToken = liff.getIDToken();
+      }
+    } catch (_) {}
+    const headers = {
+      "Content-Type":  "application/json",
+      "Authorization": "Bearer " + ADMIN_ANON_KEY,
+      "apikey":        ADMIN_ANON_KEY,
+    };
+    if (idToken) headers["X-Line-IdToken"] = idToken;
+
+    const body = Object.assign({}, payload);
+    if (state.lineUid && !body.lineUid) body.lineUid = state.lineUid;
+
+    const res = await fetch(ADMIN_API_URL, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+    let json = null;
+    try { json = await res.json(); } catch (_) { json = null; }
+    return { res, json };
+  }
+
+  async function submitReqCorrection(allowDuplicate) {
+    if (!state.actor || !state.actor.id) {
+      toast("error", "請先完成身份驗證");
+      return;
+    }
+    const punchType  = $("reqCorrType").value;
+    const targetDate = $("reqCorrDate").value;
+    const targetTime = $("reqCorrTime").value;
+    const reason     = ($("reqCorrReason").value || "").trim();
+
+    if (!targetDate) { toast("warning", "請選日期"); return; }
+    if (!targetTime) { toast("warning", "請填時間"); return; }
+    if (!reason)     { toast("warning", "請填原因"); return; }
+
+    // 客戶端日期區間校驗（後端會再驗一次）
+    const today = corrTodayTw();
+    const minD  = corrMinDateTw();
+    if (targetDate > today) { toast("warning", "不能補未來日期"); return; }
+    if (targetDate < minD)  { toast("warning", `最多只能往前 ${CORRECTION_WINDOW_DAYS} 天`); return; }
+
+    const btn = $("reqCorrSubmit");
+    btn.disabled = true;
+    btn.textContent = "送出中…";
+
+    try {
+      const { res, json } = await callAdminAction({
+        action:          "requestPunchCorrection",
+        staff_id:        state.actor.id,
+        request_type:    "add",
+        punch_type:      punchType,
+        target_date:     targetDate,
+        target_time:     targetTime,
+        reason:          reason,
+        allow_duplicate: !!allowDuplicate,
+      });
+
+      // 重複打卡 → 跳 confirm 後重送
+      if (res.status === 409 && json && json.code === "DUPLICATE_PUNCH_EXISTS") {
+        const msg = (json.error || "該員工該日該類型已有打卡紀錄。") +
+                    "\n\n仍要送出嗎？（按「確定」= 仍送出 / 按「取消」= 放棄）";
+        if (window.confirm(msg)) {
+          btn.disabled = false;
+          btn.textContent = "送出申請";
+          await submitReqCorrection(true);
+          return;
+        } else {
+          return;
+        }
+      }
+
+      if (!res.ok || !json || !json.success) {
+        const errMsg = (json && (json.error || json.message)) ||
+                       `送出失敗 (HTTP ${res.status})`;
+        toast("error", errMsg);
+        return;
+      }
+
+      toast("success", "✅ 已送出申請，等候主管審核");
+      closeReqCorrectionModal();
+    } catch (e) {
+      console.error("[requestPunchCorrection] fail:", e);
+      toast("error", "連線失敗，請檢查網路");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "送出申請";
+    }
+  }
+
   // 綁定 click
   document.addEventListener("DOMContentLoaded", () => {
     ["in", "out", "overtime_in", "overtime_out"].forEach(t => {
       const el = $("btn-" + t);
       if (el) el.addEventListener("click", () => doPunch(t));
     });
+
+    // 申請補打卡 入口 + modal 按鈕
+    const reqBtn = $("corrRequestBtn");
+    if (reqBtn) reqBtn.addEventListener("click", openReqCorrectionModal);
+    const reqCancel = $("reqCorrCancel");
+    if (reqCancel) reqCancel.addEventListener("click", closeReqCorrectionModal);
+    const reqSubmit = $("reqCorrSubmit");
+    if (reqSubmit) reqSubmit.addEventListener("click", () => submitReqCorrection(false));
+    const overlay = $("reqCorrectionModal");
+    if (overlay) overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeReqCorrectionModal();
+    });
+
     boot();
   });
 </script>
